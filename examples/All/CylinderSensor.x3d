@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<X3D profile='Full' version='3.2'>
+  <head>
+    <meta name='title' content='CylinderSensor.x3d'/>
+    <meta name='description' content='X3D CylinderSensor example.'/>
+    <meta name='author' content='SenseGraphics AB, 2006-2014'/>
+  </head>
+  
+  <Scene>
+    <Viewpoint description='Front view' position='0 0 0.6'/>
+    <Viewpoint description='Top view' position='0 0.6 0' orientation='1 0 0 -1.57' />
+    <NavigationInfo type='NONE' />
+    
+    <Group>
+      <CylinderSensor DEF='S'
+          enabled='true'
+          autoOffset='true'
+          axisRotation='1 0 0 0'
+          diskAngle='0'
+          maxAngle='-1'
+          minAngle='0' />
+      <Transform DEF='T' 
+          translation='-0.15 0 0'>
+        <Shape DEF='B'>
+          <Appearance>
+            <Material />
+          </Appearance>
+          <Box size='0.1 0.1 0.1' />
+        </Shape>
+      </Transform>
+    </Group>
+    
+    <Group>
+      <CylinderSensor DEF='S1'
+          enabled='true'
+          autoOffset='true'
+          axisRotation='1 0 0 1.57'
+          diskAngle='0'
+          maxAngle='1.57'
+          minAngle='0' />
+      <Transform DEF='T1' 
+          translation='0.15 0 0'>
+        <Shape USE='B' />
+      </Transform>
+    </Group>
+    
+    <ROUTE
+        fromNode='S' fromField='rotation_changed'
+        toNode='T' toField='rotation' />
+    <ROUTE
+        fromNode='S1' fromField='rotation_changed'
+        toNode='T1' toField='rotation' />
+  </Scene>
+</X3D>

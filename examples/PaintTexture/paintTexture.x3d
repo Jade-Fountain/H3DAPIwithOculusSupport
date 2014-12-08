@@ -1,0 +1,19 @@
+<Group>
+    <Transform rotation="1 0 0 0">
+      <Shape>
+        <Appearance DEF="APPEARANCE" >
+          <Material/>
+          <SmoothSurface />
+        </Appearance>
+        <Rectangle2D DEF="GEOM" size="0.4 0.4" solid="FALSE" />
+      </Shape>
+    </Transform>
+ 
+  <PythonScript DEF="PS" url="paintTexture.py" >
+    <Appearance USE="APPEARANCE" containerField="references" />
+  </PythonScript>
+ 
+  <ROUTE fromNode="GEOM" fromField="contactTexCoord"
+         toNode="PS"      toField="drawTexCoord"/>
+ 
+</Group>

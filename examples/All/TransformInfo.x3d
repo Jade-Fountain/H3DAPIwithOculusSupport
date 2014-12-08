@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<X3D profile='H3DAPI' version='1.4'>
+  <head>
+    <meta name='title' content='TransformInfo.x3d'/>
+    <meta name='description' content='H3DAPI TransformInfo example. Prints the
+      value of triggerTime on leftButton events.
+      This example uses H3DAPI node(s) and runs on H3DAPI-supported browsers 
+      only. Visit http://www.h3d.org for more information and to download an
+      H3DAPI-compatible browser.'/>
+    <meta name='author' content='SenseGraphics AB, 2006-2014'/>
+  </head>
+  
+  <Scene>
+    <Viewpoint position='0 0 0.6' />
+    <NavigationInfo type='NONE' />
+    
+    <Transform translation='0.1 0.2 0.03'>
+      <Transform translation='12.3 -9.3 5.61' rotation='1 3.4 -7 0.77'>
+        <Transform scale='0.2 3 1.5'>
+          <TransformInfo DEF='T' />
+        </Transform>
+      </Transform>
+    </Transform>
+    
+    <PythonScript DEF='P' url='script.py' />
+
+    <!-- ExternProto for Text -->
+    <ExternProtoDeclare name='Text' url='"./Prototype.x3d#Text"'>
+      <field accessType='inputOutput' name='offset' type='SFVec3f'/>
+      <field accessType='inputOutput' name='string' type='MFString'/>
+    </ExternProtoDeclare>
+    <ProtoInstance name='Text' DEF='D' />
+
+    <ROUTE
+      fromNode='T' fromField='accForwardMatrix'
+      toNode='P' toField='matrixToMFString' />
+    <ROUTE
+      fromNode='P' fromField='matrixToMFString'
+      toNode='D' toField='string' />
+
+  </Scene>
+</X3D>

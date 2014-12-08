@@ -1,0 +1,208 @@
+H3DAPI is a cross-platform, device independent haptics and graphics scenegraph
+API. It can be used to develop applications using haptics and graphics from
+scratch. For information on how you are allowed to use H3DAPI see the LICENSE
+file in the same folder as this file.
+
+This file contains complete installation instructions for Linux, Mac and Windows.
+
+-------------------------------------------------------------------------------
+External Libraries:
+H3DAPI depends on other libraries. Some of them are required for H3DAPI to
+compile others are optional. The build system used by H3DAPI will detect which
+libraries are installed on the system and only enable the features that the
+system can support. For Windows most libraries are included. Those missing must
+be downloaded, compiled and installed on the system used if that feature is
+desired. Note that all libraries that are required or optional in HAPI also
+are required and optional by H3DAPI. The libraries used by H3DAPI are:
+ 
+ Required libraries. Without these H3DAPI will not function.
+  - GLEW, extended OpenGL functions. http://glew.sourceforge.net/
+  - OpenGL. Installed on all systems. For those interested see http://www.opengl.org/
+  - pthread. Included with Windows distribution, most probably installed on
+    other systems.
+  - GLUT or Freeglut. Freeglut is a better choice. http://freeglut.sourceforge.net/
+    Must be compiled with -fexceptions as a compiler flag to allow c++ exceptions.
+ 
+ Optional libraries, without these some features of H3DAPI will be disabled
+ and some of the distributed examples will not work.
+  - Xerces, for parsing X3D-files. http://xml.apache.org/xerces-c
+  - FTGL, for rendering fonts in OpenGL. http://homepages.paradise.net.nz/henryj/code
+  - OpenAL, for sound in H3DAPI. http://www.openal.org/downloads.html
+  - libcurl, used for handling urls. http://sourceforge.net/projects/curl/
+  - libaudiofile, for reading sound files. http://68k.org/~michael/audiofile/
+  - libvorbis, to read more sound files. http://xiph.org/downloads/
+  - Python, for python scripting support. http://www.python.org
+  - wxWidgets. Needed for H3DViewer. http://www.wxwidgets.org/
+  - FreeImage. Used to read images. http://freeimage.sourceforge.net
+  - FreeType. Used by text nodes. http://www.freetype.org
+  - 3dxware. Used to communication with 3dxware devices. Used by SpaceWareSensorNode.
+    http://www.3dconnexion.com
+  - Cg. Shading language for NVIDIA. http://developer.nvidia.com/object/cg_toolkit.html
+  - libogg. Ogg vorbis  sound file support. http://xiph.org/downloads/
+  - zlib. Required for parsing zipped files. http://www.zlib.net/
+  - Teem. Required for reading the Nrrd file format. http://teem.sourceforge.net/
+  - DICOM toolkit. Required for reading dicom files. http://dicom.offis.de/dcmtk
+  - DirectShow. Required for the DirectShowDecoder which is used for MovieTextures on
+    Windows. Older versions are included with DirectX SDK. Newer versions are included
+    with the Windows SDK.
+  - FFmpeg. Required for the FFmpegDecoder class which is used for MovieTextures.
+    http://ffmpeg.org/
+  - SpiderMonkey. Required for EcmaScript support.
+    http://www.mozilla.org/js/spidermonkey/
+  - Virtual Hand SDK. Needed for CyberGloveSensor and HumanHand nodes.
+
+-------------------------------------------------------------------------------
+
+Installation on Linux:
+Using debian packages:
+1. Modify sources.list ( or whatever file is used to specify urls to debian
+   packages ) by adding ftp://www.h3dapi.org/pub/releases/linux/debian/
+   to it.
+   On Ubuntu 12.04 simply use:
+     sudo gedit /etc/apt/sources.list
+     Then add 
+       deb ftp://www.h3dapi.org/pub/releases/linux/debian precise sensegraphics
+       deb-src ftp://www.h3dapi.org/pub/releases/linux/debian precise sensegraphics
+     
+     If you use a different linux version simply switch "precise" for the name
+     of your distribution.
+     
+2. sudo apt-get update
+3. sudo apt-get install libh3dapi2
+4. sudo apt-get install h3dviewer. This step is optional.
+5. Use H3DViewer to open any x3d file.
+     
+Building from source:
+Since you have this file
+you have already obtained and unpacked the source for H3DAPI. To build H3DAPI
+on Linux follow these steps.
+
+1. Install version 2.8.0 or later of CMake. To do this on Ubuntu open a
+   terminal and write:
+    sudo apt-get install cmake
+
+2. Download the source for HAPI. Build and install HAPI on your system. H3DAPI
+   requires HAPI.
+
+3. H3DAPI depends on other libraries. The build system used by H3DAPI will 
+   detect which libraries are installed on the system and only enable the
+   features that the system can support. If more features are desired the
+   corresponding library has to be installed. Note that some libraries are
+   required for H3DAPI to compile. See the list of external libraries in the
+   beginning of this ReadMe.
+   
+   For linux the library fontconfig1 is also needed. www.fontconfig.org
+
+   If using Ubuntu, several of these libraries can be obtained by using the
+   apt-get feature. Note that for later versions of Ubuntu than
+   7.10 the required and/or optional libraries might be of newer versions that
+   those given here. The newer versions shold work with H3DAPI but it might not
+   be guaranteed. In a terminal write:
+    sudo apt-get update
+    sudo apt-get install gcc g++ libxerces27 libxerces27-dev ftgl-dev \
+    libopenal0a libalut0 libalut-dev libopenal-dev libglew-dev libglut \
+    libglut3-dev libcurl3-dev libaudiofile-dev libfontconfig1-dev \
+    libfontconfig1 libvorbis-dev python-dev python-all-dev libfreeimage-dev \
+    alien
+
+   The first two are the C++ compilers needed to compile H3DAPI.
+
+   To install WxWidgets (version 2.8) write:
+    sudo apt-get install libwxgtk2.8-dev
+   
+   In version 8.04 of Ubuntu another library might need to be installed:
+     sudo apt-get install libxi-dev libxmu-dev   
+
+4. In the terminal change folder to the H3DAPI/build folder. Write:
+    cmake .
+   This will generate a make file. To use the makefile write:
+    make
+
+   H3DAPI will be built. When the make finished write:
+    sudo make install
+
+   H3DAPI libraries are now installed on your system. But there is no
+   application installed that use H3DAPI libraries.
+
+5. There are two applications provided that can be used to load the example
+   x3d-files provided. These applications are H3DLoad and H3DViewer. To build
+   and install these programs do the following.
+    Change folder to H3DAPI/H3DLoad/build.
+    cmake .
+    sudo make install
+   
+    Change folder to H3DAPI/H3DViewer/build
+    cmake .
+    sudo make install.
+
+   If only one of these applications is desired then only build and install one
+   of them.
+
+5. To use the SettingGUI.py program located in the H3DAPI/settings folder the
+   H3D_ROOT environment variable needs to be set to the folder H3DAPI.
+   When this is done the program can be started by navigating to the appropiate
+   folder and writing "python SettingsGUI.py" in the terminal. Without this
+   program H3DLoad and H3DViewer will not be configured correctly for the 
+   examples provided.
+
+6. Test your installation by changing directory to
+   H3DAPI/example/x3dmodels/berk and write:
+     H3DLoad berk.x3d
+
+-------------------------------------------------------------------------------
+
+Installation on Windows:
+To install H3DAPI on Windows follow these steps:
+1. Go to www.h3d.org.
+2. Download latest release of H3DViewer
+3. Install H3DViewer.
+4. Open any x3d file.
+
+Build from source:
+1. Go to www.h3d.org.
+2. Download latest release of H3DAPI.
+3. In the installer, on the page where you choose what to install make sure
+   H3DAPI is seleted. Then continue installing.
+4. Use CMake to generate project files for your compiler. Tested with visual
+   studio 2003, 2005, 2008, 2010 and 2012.
+5. Open the solution file and build the INSTALL target.
+6. If H3DViewer/H3DLoad is desired check H3DAPI_LOADER_PROJECTS in the cmake
+   configuration step. Use these programs to open an x3d file.
+
+-------------------------------------------------------------------------------
+
+Installation on MacOS X:
+Currently you need to build H3DAPI on MacOS X yourself. Since you have this
+file you have already obtained and unpacked the source for H3DAPI. To build
+H3DAPI on MacOS X follow these steps.
+1. Install version 2.8.0 or later of CMake.
+2. Install XCode. If gcc is an unrecognized command in the terminal after
+   installing XCode there is a high probability that CMake will not be able to
+   generate build files for gcc and/or XCode. Another version of XCode could be
+   used or fix it in some other way.
+3. Download the source for HAPI. Build and install HAPI on your system. H3DAPI
+   requires HAPI.
+4. H3DAPI depends on other libraries. The build system used by H3DAPI will 
+   detect which libraries are installed on the system and only enable the
+   features that the system can support. If more features are desired the
+   corresponding library has to be installed. Note that some libraries are
+   required for H3DAPI to compile. See the list of external libraries in the
+   beginning of this ReadMe.
+5. Generate build files for your build system using CMake. Either use the
+   console version as in the guide for linux above or use the GUI version in
+   which the first textbox should contain the location of the CMakeLists.txt
+   file. This can be located in H3DAPI/build. The second box is the location
+   of where the build files will be created. Use for example H3DAPI/build/OSX.
+   Press configure, choose which system to generate build files for wait and
+   press configure again until the generate button can be used. Press generate
+   and then the build files will be in the choosen folder. If "Unix Makefile"
+   are choosen then proceed from point 4 in the linux above.
+6. Generate build files for H3DLoad and H3DViewer with the CMakeLists.txt
+   located in H3DAPI/H3DLoad/build and H3DAPI/H3DViewer/build. Build these
+   and test your installation by starting H3DViewer and opening a file using
+   the menu. Alternatively you could open a file with H3DLoad from the terminal
+   as in step 6 of the linux guide.
+
+Notes:
+Information for some parts of this installation file (linux) contributed by jofo
+user on www.h3d.org.

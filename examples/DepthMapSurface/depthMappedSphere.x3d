@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<X3D profile='H3DAPI' version='2.0'>
+  <head>
+    <meta name='title' content='depthMappedSphere.x3d'/>
+    <meta name='description' content='An example of how a surface specified through the DepthMapSurface node can feel. The example only works for GodObjectRenderer and RuspiniRenderer.'/>
+    <meta name='author' content='SenseGraphics AB, 2008-2014'/>
+  </head>
+  <Scene>
+    <Shape>
+      <Appearance>
+        <Material />
+
+        <ImageTexture url="mamm_mask_rgb.png" DEF="IMT" repeatS="false" repeatT="false"/>
+
+        <DepthMapSurface stiffness="0.2"
+                        maxDepth="0.007"
+                        staticFriction="0"
+                        dynamicFriction="0"
+                        whiteIsOut="true" >
+
+          <ImageTexture containerField="depthMap" url="mamm_mask_rgb.png" repeatS="false" repeatT="false"/>
+        </DepthMapSurface>
+      </Appearance>
+
+      <Sphere radius="0.1" />
+
+    </Shape>
+  </Scene>
+</X3D>

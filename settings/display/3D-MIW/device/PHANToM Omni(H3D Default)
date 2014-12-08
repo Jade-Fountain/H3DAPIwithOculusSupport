@@ -1,0 +1,10 @@
+<DeviceInfo>
+   <PhantomDevice       orientationCalibration="1 0 0 0.726225"
+      positionCalibration="2.332 0 0 0
+0 1.74361 -1.54857 -0.1475
+0 1.54857 1.74361 -0.128
+0 0 0 1 " >
+		<OpenHapticsRenderer/>
+	</PhantomDevice> 
+</DeviceInfo>
+

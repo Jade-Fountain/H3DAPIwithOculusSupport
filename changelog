@@ -1,0 +1,845 @@
+Changes for version 2.3.0:
+- Generated header is moved to CMake build directory and can only be found
+ in H3DAPI/include after INSTALL project has been built.
+- Speed optimizations that could affect some compilers.
+- Updates to CMake build system to build properly when TortoiseSVN is installed
+ but the current H3D build is not a TortoiseSVN checkout.
+- Added a InstallH3DAPIAndExternals.cmake package file which can be used by
+ applications to package up needed files by the current H3DAPI build.
+- Added profiling of haptics and graphics thread if built with profile support.
+ Profiling is not enabled in the released binaries.
+- A lot of performance improvements. H3DAPI should render faster in many cases
+ now.
+- Scene::findNode* functions now handle Inline. FindNode* functions are now
+ static.
+- Updates to fix artifacts with GPU shadows.
+- X3DTextureNode nodes can now have their current state saved as PNG.
+- Fixed issues with QUAD_BUFFERED_STEREO.
+- Updates to handle protos better.
+- If GLUT gameMode is used then GLUTWindow now still handle keyboard inputs
+ properly.
+- Many updates to FrameBufferTextureGenerator. Such as setting local
+ NavigationInfo, handling shadows, support for new DEPTH_BUFFER types and
+ support for external color and/or depth buffer for buffer storage. It should
+ also now work properly with QUAD_BUFFERED_STEREO mode.
+- Memory leak fixes.
+- Some field types had unitialized default values, this is fixed now.
+- Added optional COPY option for USE statement. Can be useful when there are
+ nodes which does not handle the DEF/USE system that well.
+- Use F11 to switch to/from fullscreen in H3DLoad.
+- Renamed FindTeem.cmake to FindH3DTeem.cmake in order to use CMakes new
+ FindTeem module if it exists. Did the same for FindFreeType.cmake.
+- DirectShowDecoder now plays wmv files.
+- PointSet, LineSet, IndexedLineSet now have vertex attribute support.
+- Doxygen documentation now links to python documentation as well.
+- Extrusion now calculates normal per triangle face instead of per quad face.
+- Improved the static and dynamic database so getField function is now faster.
+- H3DWindowNode has a takeScreenShot static function.
+- Made it possible to put multiple objects in a ShadowTransform node.
+
+New H3D nodes:
+FBODebugger
+GaussianFilterShader
+GeometryGroup
+PlaybackDevice
+NoiseTexture
+NoiseTexture3D
+RazerHydraSensor
+SimpleAudioClip
+
+New python functionality:
+- Added getTypeName, getValueAsString, setValueAsString, setName, getName,
+ getFullName, isUpToDate, upToDate, replaceRoute, replaceRouteNoEvent,
+ unrouteAll, getOwner and setOwner functions for fields.
+- Added takeScreenshot and findNodes function.
+
+H3DViewer updates:
+- Can now copy current log text to clipboard.
+- Added dialog to show profiling information if profiling is enabled.
+- TreeViewer only expand X3DGroupingNode at first view now.
+- QUAD_BUFFERED_STEREO should work properly again.
+- Updates to handle QUAD_BUFFERED_STEREO on an NVIDIA_3DVISION ready display
+ with a non-quadro card. Note that this requires a special built wxWidgets.
+ WxWidgets adopted a patch supplied by us so in the future this should work
+ for standard releases of WxWidgets. The patch is actually applied in wxWidgets
+ 3.0 release.
+- Updates to make sure that the stereo menu disables stereo modes that can not
+ be switched to after selected a stereo mode.
+- Added "-dp" command line switch to disable plugins at startup.
+- Made sure that starting up in fullscreen results in displaying window in
+ windowed mode as short time as possible.
+- Faster startup due to optimizations.
+
+Compatability issues:
+- Changed default depth buffer type of FrameBufferTextureGenerator.
+- Not binary compatible due to changes to database and inheritance for some nodes.
+- ShadowTransform::shadowVolume is now of MFNode type, was SFNode.
+- Fields beamWidth and cutOffAngle in SpotLight node now have default values which
+  makes sense as per update of X3D specification 3.3.
+
+Changes for version 2.2.0:
+- Added functionality for more convenient Import/Export use of Inlined files.
+- Added a node clone function. Exposed in python.
+- Some DynamicTransform now only updates when value actually change.
+- MField::insert() functions fixes to take const_iterator.
+- Fix so that ImportLibrary supports specification of several optional paths to
+ a library in the url field
+- Many CMake updates to handle configuration settings for building with various
+compilers.
+- New stereo formats, HDMI_FRAME_PACKED_720P and HDMI_FRAME_PACKED_1080P
+ and NVIDIA_3DVISION
+- Added support for tesselation shaders.
+- Added Testsuit (well first version) which can be used to detemine if
+rendering with vertex buffer objects is faster for a specific system.
+- Added support for giving inline scripts as CDATA for xml files.
+- TwoSidedMaterial::backTransparency is now properly used.
+- Fixed bug in CoordinateDeformer. It was always deforming for device 0.
+- Fixed issue with obtaining wrong ResourceResolver instance.
+- Added force and torque limits to haptics devices.
+- Added program settings functionality.
+- VRML parser updates to work properly with DEF/USE.
+- A DeformableShape instances first occurance in scene graph detemines its deformation.
+- deviceInfo field common for all force effects. It is now a MFInt32.
+- New base class H3DSingleTextureNode for texture nodes which specify a texture using a
+  single texture id.
+- Fixed use of wrong coordinate system in ProximitySensor.
+- Proper implementation of calibration field in PhantomDevice.
+- Extrusion updates to comply with latest spec.
+- H3DViewer navigation keyboard short-cut now need Alt button pressed.
+- Support for including dynamic fields in writeNodeToX3D functions.
+- Updates for better support of the X3D proto system.
+- H-anim X3D component support.
+- Fixed variuos bugs with textures.
+- Added generated shader nodes framework.
+- Updates to make it easier to configure correct stereo for head mounted displays.
+- Support for float internal texture formats.
+- Support for full screen anti-aliasing.
+- UnityBuild option for users that frequently recompile the API and want to save time.
+- H3DViewer use wxWidgets 2.9 and wxPropertyGrid feature.
+- 64 bit builds of external libraries.
+- DEF is no longer an alternative to moduleName for a PythonScript.
+- Documentation now contains a page listing all nodes and their fields.
+- Memory leak fixes.
+- Support for rendering using vertex buffer object of nodes IndexedTriangleSet, Sphere, Cylinder,
+ ElevationGrid and SuperShape.
+- Fixes to stereo modes HORIZONTAL_INTERLACED, VERTICAL_INTERLACED and VERTICAL_INTERLACED_GREEN_SHIFT.
+- Tangent space normal maps in PhongShader node and automatic tangent vertex attribute
+ generation for IndexedTriangleSet/IndexedFaceSet.
+- Support for haptics devices from Haption (VirtuoseDevice).
+- PythonScript cleanup on destruction fixes.
+- h3dload.ini is now stored in users location if user do not have access rights to
+write to default location.
+- GraphicsCachingOptions is now named GraphicsOptions.
+- X3DPointingDeviceSensor updates to comply with X3D specification.
+  Also fixed other errors with X3DPointingDeviceSensors.
+- Added support for geometry shaders.
+- Fixed maxDistance issues with HapticLayeredGroup.
+- SpiderMonkey updates. That is much better ECMAscript support.
+- ToggleGroup and Clipplane can now be set to work per haptics device.
+- Fix bugs with dual windows navigation
+- Several new x3d example files to cover all nodes.
+- Updates to get correct default headlight in stereo rendering.
+- Updates to Shadow geometries and shadows can be done by shaders.
+- Several updates to multiPassTransparency.
+- Added resolveURLAsFolder functionality
+
+New H3D nodes:
+ComposedGeneratedShader
+EntactDevice
+EnvironmentMapShader
+FrameBufferTextureGenerator
+FullScreenRectangle
+GeneralDirectionalLight
+GeneralPointLight
+GeneralSpotlight
+GeneratedTexture
+GeneratedTexture3D
+GraphicsHardwareInfo
+HAnimDisplacer
+HAnimHumanoid
+HAnimJoint
+HAnimSegment
+HAnimSite
+LayeredRenderer
+MLHIDevice
+MultiDeviceSurface
+MultiRenderTargetShader
+NormalShader
+PhongShader
+RenderTargetSelectGroup
+RotationalSpringEffect
+ShaderCombiner
+ShadowTransform
+VirtuoseDevice
+
+Fields added to existing nodes:
+ClipPlane - hapticsOnDevice
+ComposedShader - transparencyDetectMode
+CoordinateDeformer - deviceAlgorithm
+FakeHapticsDevice - deviceName
+ForceField - torque
+GlobalSettings - x3dROUTESendsEvent, loadTexturesInThread, renderMode, multiThreadedPython
+GraphicsOptions - useDefaultShadows, defaultShadowDarkness, preferVertexBufferObject, defaultShadowGeometryAlgorithm
+H3DHapticsDevice - forceLimit, torqueLimit
+H3DWindowNode - clipDistances
+Inline - importMode, traverseOn
+NavigationInfo - nearVisibilityLimit
+OrthoViewpoint - retainAspectRatio
+PhantomDevice - motorTemperatures
+RenderProperties - alphaFunc, alphaFuncValue, blendFuncSrcFactorRGB,
+                   blendFuncSrcFactorAlpha, blendFuncDstFactorRGB,
+                   blendFuncDstFactorAlpha, blendEquationRGB,
+                   blendEquationAlpha, blendColor
+RuspiniRenderer - alwaysFollowSurface
+SpringEffect - damping, positionInterpolation, interpolatedPosition
+ToggleGroup - hapticsOnDevice
+TransformInfo - outputGLMatrices, glModelViewMatrix, glModelViewMatrixInverse,
+                glProjectionMatrix, glProjectionMatrixInverse
+
+Deprecated nodes:
+GraphicsCachingOptions
+
+New python functionality:
+- Python created thread can run without H3D python code being run.
+- Copy constructors to H3DInterface.Vec classes.
+- new python functions:
+  throwQuitAPIException
+  createNode
+  getNrHapticsDevices
+  getHapticsDevice
+  getNamedNode
+  TimerCallback.addCallback
+  TimerCallback.removeCallback
+  Field.getAccessType
+  MField.size
+  Node.clone
+- Python doxygen documentation added.
+- New constructor for Matrix4f/4d to construct matrix given
+translation, rotation and scale.
+
+Compatability issues:
+- If deviceInfo field of force effect is not explicitly set then a force effect
+will now affect all connected devices and not just the first one. In python
+deviceInfo must be set using a list (SFInt32 -> MFInt32).
+- preRender/postRender C++ functions must be updated due to change of handling
+OpenGL attribute stack (it is quite small).
+  
+
+Changes for version 2.1.1:
+- CMake updates for handling builds with Visual studio 2010 and CMake 2.8.0.
+Still considered test-verison since Visual studio 2010 is not released yet.
+- Various minor bug fixes.
+- Exported some more classes. In case some application needs it.
+- Added clear button to console dialog of H3DViewer.
+- Added reload menu and some keyboard shortcuts to H3DViewer.
+- Varios other updates to H3DViewer.
+- Memory leak fixes.
+- Updates to compile on 64 bit ubuntu and gcc 3.1.1.
+- Added collision detection functions for Lod and Switch.
+- ClipPlane now works properly for lineIntersect functions.
+- Fix to nrrd loader in order to not accidently load jpg files using
+nrrd loader.
+- Updates which improves haptics layers performance.
+- Fog behaviour now matches X3D specification.
+- FogCoordinate now works.
+- Updates to work properly with FTGL 2.1.3 if that is used (default on latest
+ubuntu release).
+- Improvements to CMake system which groups variables belonging to a certain
+external library. Makes it easier to find these when setting manually.
+
+Changes for version 2.1:
+
+- ThreadExample now compiles into separate DLL that can be run time loaded.
+- Falcon support on linux.
+- RefCountMField now have erase and insert functions.
+- New functionality for TextureProperties.
+- Video textures works on linux, thanks to PolyDimensions.
+- Updates to compile on 64 bit systems.
+- Updates to Cmake system. Now files belonging to the various projects are
+listed explicitly.
+- Split the option PREFER_STATIC_LIBRARIES of our CMake build system into 
+PREFER_STATIC_LIBRARIES and FREEGLUT_PREFER_STATIC_LIBRARIES on windows
+systems.
+- Proxy sphere size changes for default styluses and RuspiniRenderer in
+H3DViewer.
+- Various memory leak fixes.
+- Fixes for python H3D connection.
+- getTranslationPart of Matrix4f/d and function writeNodeAsX3D can now be
+used in python.
+- Fixes to ProtoInterface.
+- Fixes to compile on recent versions of gcc.
+- Documentation updates.
+- Updates to navigation system (added zooming with scroll wheel) and Viewpoints.
+- Correct X3D functionality for addChildren and removeChildren of Grouping nodes
+now implemented.
+- Anchor is now implemented. There can be issues with scenes containing python
+scripts though.
+- Fixed a number of bugs reported on www.h3d.org.
+- Added capability for handling moving haptic objects by collecting and sending
+information about movement to HAPI.
+- New stereo modes: CHECKER_INTERLACED and HORIZONTAL_SPLIT_KEEP_RATIO.
+- H3DViewer now has an option of showing the Scene Graph and changing values of
+fields in real time.
+- New function getStackMap in X3DBindableNode.
+- Minor fix to default haptic rate. See comment about available rates in
+H3DHapticsDevice.h.
+- H3DViewer now uses the same keyboard shortcuts as H3DLoad to change
+navigation type. Switching between stereo modes at run-time now works properly.
+- H3DViewer no longer hangs when printing to the Console from multiple threads
+at the same time
+- Drag and drop files now works with H3DViewer.
+- Plugins can be loaded in H3DViewer.
+- Updates to DeviceLog, which can now be used again (it was broken in previous
+releases of H3DAPI 2.x series).
+- Updates to the node database system.
+- MagneticGeometryeffect can now handle lines and points.
+- In C++ it is now possible to specify valid values for SFString.
+- Text node now use default FontStyle if none is set as per X3D specification.
+- Corrections to DeviceInfo calls of toStackTop. All X3DBindableNodes now
+behave as they should.
+- Added writeGeometryAsSTL function (X3D.h).
+- Implemented view frustum culling. Behaviour can be set in
+GraphicsCachingOption.
+- Calls to glFrustum of X3DViewpoint moved to virtual function in order for
+users to create more specialized viewpoint nodes.
+- Updates to automatic normal calculations of IndexedFaceSet.
+- Fixes to remove warnings and error on Window 64 bit compilations
+- Added LibraryInfo struct that stores information about a library built for
+H3DAPI.
+- Fixes to URNResolver and it is now turned on by default if an index.urn file
+can be found.
+- Added simple x3d/python examples showing some features of every node in
+H3DAPI.
+
+New H3D nodes:
+CoordinateDouble
+DicomImageLoader
+EaseInEaseOut
+FFmpedDecoder
+HapticTexturesSurface
+ImageObjectInfo
+NrrdImageLoader
+
+Compatability issues:
+- If a custom made subclass to H3DWindowNode gave all arguments to
+H3DWindowNode constructor there will be a compile error since the last argument
+(time) is now removed.
+- Applications using features of H3DAPI node database systems will need to
+update their code.
+- Pixel(3D)Textures images are flipped in t. Because of a fix to reading of
+image data.
+
+Fields added to existing nodes:
+TextureProperties - scale, bias.
+
+
+Changes for version 2.0:
+
+- Inheritance order for surface nodes changed. Added two base classes and
+ removed one to manage this.
+- Fixed incorrect storage of settings in H3DViewer.
+- Corrections to CMake build system and additions for compiling against static
+ libraries.
+- Doxygen updates.
+- SpaceWareSensor no longer has to be part of the scene in order to start and
+ update correctly. Useful when creating an instance of the SpaceWareSensor node
+ in python.
+- Corrections to mainButton and secondaryButton field of H3DHapticsDevice.
+ These fields now only send events on state change, as in H3DAPI 1.5.
+- Fixed a number of bugs reported on www.h3d.org.
+- Added getActiveBindableNode python method.
+- Threads in H3DAPI now have names to differ them when debugging in Windows.
+- Corrections to initialization sequence of PhantomHapticsDevice.
+
+Compatability issues:
+- Upgrading from H3DAPI 1.5 to 2.0 will require changing the calibration
+ matrices for the device if any other than the provided device settings files
+ are used. This is due to the fact that H3DAPI now works correctly in meters.
+
+
+Changes for version 2.0 beta 1:
+
+New H3D nodes:
+CollisionOptions
+DepthMapSurface
+HapticMasterDevice
+PlanarReflector
+PositionFunctionEffect
+SimballDevice
+TimeFunctionEffect
+
+Fields added to existing nodes:
+X3DLightNode - global. Lightsources can be used as global.
+H3DHapticsDevice - hapticsLoopTime. Get the time of the last haptics loop.
+                 - deviceVelocity. Get the velocity of the device.
+                 - trackerVelocity. Get the velocity of the tracker.
+                 - desiredHapticRate. Set the desired haptics rate of the
+                   device.
+H3DVariableDepthSurface - damping. A damping can be set.
+Various surface nodes - useRelativeValues. Choose if the properties of a surface
+                        (currently only stiffness) should be relative to the
+                        maximum stiffness the device can handle or not
+HapticsOptions - interpolateForceEffects. Let the user choose if force effects
+                 should be interpolated between haptics frames or not. Now set
+                 globally instead of locally as before.
+X3DViewpointNode - totalPosition. The position after navigating.
+                   totalOrientation. The orientation after navigating.
+
+- Build files for different systems are no longer provided. They should be
+generated through CMake. www.cmake.org. The CMakeLists.txt used for this
+can be found in the build folder.
+- The PYTHONPATH and H3D_PYTHON_ROOT environment variables no longer needs
+to be set.
+- Added some examples and improved existing ones.
+- Redone how X3DPointingDeviceSensors are handled. Works better than before.
+- Added new stereo mode. Horizontal split keep aspect ratio.
+- Textures now have an editing function that uses glTexSubImage. Used to change
+texture data.
+- H3DViewer now supports unicode version of wxWidgets and also have more
+options and settings in the menus.
+- Moved H3DLoad to separate directory.
+- Zipped raw files can be read by RawImageLoader.
+- Additional changes in order to reflect changes in HAPI.
+- Fixed thread safe issues and other major issues with the haptics causing
+crashes.
+- The Rotation in the rotation field of Transform is now normalized before
+calculating the matrix. This makes it easier to specify rotation around
+arbitrary vector.
+- Added HDEV0, HDEV1, HDEV2 exports.
+- Fixed the H3D/Python connection in a number of ways. Now the user can use
+moduleName to separate PythonScripts with the same DEF-name in different files.
+Python can now access Console to print warnings.
+- Added keyboard interface in H3DLoad to enable/disable which devices should be
+used for navigation. Run H3DLoad without file as input to see the commands.
+- H3D API can now handle more than the openGL limit to the number of
+lightsources in a scene, provided that they are not all active at the same
+time when following the tree hierarchy added together with the number of global
+lightsources in the scene.
+- Prepared for chosing to link libraries statically. User need to compile the
+libraries themselves to use this feature.
+- Fixed problem with diffuseColor when loading images for textures in threads.
+- Fixed a lot of minor bugs. See svn changelog at www.h3d.org:8080 for details.
+
+
+Compatability issues:
+- Moved Image, PixelImage and FreeImageImage to H3DUtil.
+- HAPI::Bounds namespace renamed to HAPI::Collision.
+- Moved header files of H3DUtil, HAPI and H3D so that:
+   HAPI includes requires HAPI/ prefix.
+   H3DUtil includes requires H3DUtil/ prefix.
+   Header files of H3D API requires H3D/ prefix.
+- Now use functions when getting information from the ContactInfo struct.
+- lineIntersect, movingSphereIntersect and closestPoint functions of Node
+are now using a struct as argument.
+- Can no longer set interpolate property for each force effect. It has to
+be set globally through the HapticsOptions node.
+- SensAbleDevice -> PhantomDevice
+- HaptikHapticsDevice -> HaptikDevice.
+
+
+Changes for version 2.0 alpha:
+
+New X3D nodes:
+Anchor (prototype)
+Collision
+ConeEmitter
+CylinderSensor
+ExplosionEmitter
+FogCoordinate
+ForceDimensionDevice
+GravityPhysicsModel
+LOD
+NurbsCurve
+OrthoViewpoint
+ParticleSystem
+PlaneSensor
+PointEmitter
+ProximitySensor
+SphereSensor
+SplinePositionInterpolator	
+SplinePositionInterpolator2D 
+SplineScalarInterpolator
+StringSensor
+SurfaceEmitter
+TouchSensor
+ViewpointGroup
+VisibilitySensor
+WindPhysicsModel
+	
+New H3D nodes:
+DebugOptions
+FunctionPlotTexture
+GeometryBoundTreeOptions
+GodObjectRenderer
+HapticLayeredGroup
+HapticsOptions
+MagnetGeometryEffect
+OpenHapticsSurface
+RuspiniRenderer
+SensAbleDevice
+TransferFunctionTexture
+ViscosityEffect
+
+- Changed so that all haptics effects, haptics device handling goes
+through the new haptics library HAPI.
+- Moved linear algebra, threads and other common classes to H3DUtil
+library.
+- Transparency rendering has been improved, but there is a performance
+penalty when rendering transparent objects. Using the RenderProperties
+node the new functionallity can be toggle on or off. Default is on. 
+- Support for different navigation types(WALK, FLY, LOOKAT, EXAMINE) and
+navigation with haptics device, mouse, keyboard and space mouse.
+- All geometry nodes have lineIntersect and closestPoint functions.
+- Fixed some TimeSensor bugs.
+- Image files are now loaded in separate threads by default.
+- Fixed a bug with use of MultiTextureCoordinate without any nodes in its
+texCoord field and if using TextureCoordinateGenereator in them.
+- Fixed a bug with some stereo modes where the stencil mask was not
+updated when the stereo mode was changed.
+- Fixed bug in interpolator nodes that produced the wrong value in some cases.
+- Fixed some problems with the LibCurlResolver which would return a html
+page on a 404 response code.
+- Fixed a problem with MFString values in prototype definitions.
+- Fixed so that X3DUrlObjects can accept inline urls such as "glsl: ...". 
+- Updated H3DLoad to be able to switch navigation type and viewpoint
+easily.
+- Fixed a bug when using double versions of linear algebra types in
+Python(e.g. Vec3d)
+- MultiTexture can now be used for all geometry types.
+- Fixed bugs that gave warning messages when using the Prototype features 
+of X3D.
+
+	
+Compatability issues:
+- DHDHapticsDevice -> ForceDimensionDevice
+- HLHapticsDevice -> SensAbleDevice
+- The interface to force effects have changed and HAPI structures must be
+used.
+- If you have implemented your own geometry nodes there are some
+changes. For once you do not need to add any haptics geometries in your
+new node in order to be able to touch it. Instead this is done
+automatically in X3DGeometryNode. 
+- If you want to use face culling in your geometry node please use the
+useBackFaceCulling/useCulling/setCullFace functions in X3DGeometryNode
+in the traverseSG function instead of specifying OpenGL calls directly in
+render() to do it. This is needed in order for everything to work properly
+when generating triangles to use for haptics.
+
+	
+Changes for version 1.5:
+
+New nodes:
+BooleanSequencer
+BooleanTrigger
+Contour2D
+ContourPolyLine2D
+DefaultAppearance
+DHDHapticsDevice
+DirectShowDecoder
+Extrusion
+HaptikHapticsDevice
+GlobalSettings
+GraphicsCachingOptions
+IntegerSequencer
+IntegerTrigger
+NurbsCurve2D
+NurbsPatchSurface
+NurbsTextureCoordinate
+NurbsTrimmedSurface
+OpenHapticsOptions
+SimpleMovieTexture
+TextureProperties
+TimeTrigger
+TwoSidedMaterial
+
+- Fixed types interface to Python so that you now can e.g. add a Vec3f to
+an Vec3d. Also added missing functions from the Python variants.
+- Fixed some fallthrough problems. 
+- Fixed so that geometries are not rendered haptically unless the proxy is close enough. What close enough is is decided by OpenHapticsSettings ndoe
+- Fixed a bug where the alpha channel BGRA textures was ignored. Also fixed so that FreeImageLoader can load 32 bit RGB PNG images
+- Haptics was missing from cone, now fixed.
+- Added nodes for controlling parameters for geometries, such as 
+  GraphicsCachingOptions and OpenHapticsOptions
+- Added X3D/VRML parser.
+- Allowing commas to be whitespace in X3D parser, as per X3D spec.
+- Fixed a bug in IndexedFaceSet that cause errors when specifying normalPerVertex TRUE, a normalIndex and a Normal node in the normal field.
+- Added support for multiple devices for the force, isTouched, contactPoint and contactNormal fields in X3DGeometryNode
+- Fixed some bugs with threading.
+- Lots of other smaller bugfixes. See svn changelog at www.h3d.org:8080
+for details.
+	
+Changes for version 1.4:
+
+New nodes:
+CoordinateDeformer
+DeformableShape
+ElevationGrid
+Fog
+GaussianFunction
+GLUTWindow
+H3DCoordinateDeformerNode
+H3DWindowNode
+LocalFog
+WorldInfo
+X3DFogObject
+X3DInfoNode
+
+- Fixed some reference counting problems in the Python integration. 
+	
+- Moved template instantiations of basic field types as SFFloat, MFInt32,
+etc to separate files( SFFloat.h, MFInt32.h, etc). This makes a HUGE
+difference on the object file size when using Visual Studio and hence also
+the linking time. It will require all nodes to explicitly include the
+header files for the field types they use though.
+        
+- Added Console class to allow setting debug levels on warning messages
+and changed all printouts in the API to use it.
+
+- Changed implementation of X3DBindableNode to work more according to the
+X3D spec. Also it is no longer template based.
+        
+- Restructuring of window classes. GLWindow is no more and has been
+replaced by the abstract base class H3DWindowNode and GLUTWindow. This was
+done to allow easier use of other window handler as e.g. Qt. 
+        
+- Implemented creaseAngle in IndexedFaceSet
+        
+- Fixed a problem where the stereo effect would disappear sometimes on
+Sharp laptops using the VERTICAL_INTERLACED_GREEN_SHIFT stereo mode.
+
+- Proper implementation of MultiTexture node (bumpmap examples included for
+example usage)
+        
+- Added possibility to refer to INPUT_OUTPUT fields xxx as set_xxx and
+xxx_changed as defined in the x3d spec(in Python and X3D)       
+        
+- Added support for the IMPORT/EXPORT x3d statements.
+
+- Added support for PROTO nodes in x3d.
+        
+- Including .lib files in Visual Studio using pragmas in the source code
+to be able to automatically remove/add libraries depending on the values
+of the HAVE_* defines in H3DApi.h.
+
+- Added scrollUp and scrollDown to MouseSensor node (only works if using
+freeglut).
+
+- Added the ResourceResolver for resolving urls. Implemented
+LibCurlResolver that takes care of http, ftp, and some other protocols for
+resolving urls.
+
+Changes for version 1.3:
+
+New nodes:
+Arc2D
+ArcClose2D
+AudioClip
+Circle2D
+ComposedCubeMapTexture
+ComposedShader
+Disk2D
+DynamicShape
+FloatVertexAttribute
+GeneratedCubeMapTexture
+Matrix3fVertexAttribute
+Matrix4fVertexAttribute
+PackagedShader
+Polyline2D
+Polypoint2D
+ProgramShader
+ShaderPart
+ShaderProgram
+Sound
+TriangleSet2D
+        
+- Added erase and insert methods to MFields.
+
+- None object is now used in Python to represent a NULL node pointer.
+
+- Added lots of new member functions for MFields in Python, such as erase
+push_back, empty etc.
+
+- Several fixes to give better error messages in Python.
+
+- Fixed a bug in the Material node where the specular color was never 
+specified.
+        
+- Fixed a bug where texture coordinate generation was not turned off in 
+X3DComposedGeometryNode.
+
+- Added ROUTE_NO_EVENT keyword to X3D.
+
+- Fixed a bug in Background and TextureBackground where the front and back 
+textures were mixed up. Also there was a problem with one of the texture 
+coordinates for the top texture.
+
+- Added CAMERASPACEREFLECTIONVECTOR and CAMERASPACENORMAL texture
+coordinate generation modes to TextureCoordinateGenerator.
+
+- Fixed a bug with background rendering in stereo.
+
+- Fixes to compile with Visual Studio 2005.
+
+- Lots of other smaller bugfixes. See svn changelog at www.h3d.org:8080
+for details.
+
+Changes for version 1.2:
+
+New nodes:
+Background
+BooleanFilter
+H3DThreadedHapticsDevice
+FakeHapticsDevice
+NavigationInfo
+SpaceWareHapticsDevice
+StereoInfo
+TextureBackground
+X3DBackgroundNode
+        
+- Added access to the different bindable stacks from Python. The
+H3DInterface module now contains getActiveBackground, getActiveDeviceInfo,
+getActiveStereoInfo, getActiveViewpoint and getActiveNavigationInfo
+functions.
+
+- Added access to the current scenes from Python via the getCurrentScenes
+function in the H3DInterface module.
+
+- All the createX3D...() functions in Python now returns a dictionary with
+the DEFed names and nodes from the x3d-file as well as the toplevel node.
+
+- When an ImageTexture or Image3DTexture node does not succeed to load
+any of the urls it is provided, a warnings message is now given instead of
+throwing an exception as before.
+
+- Added some threading classes for creating threads, mutex locks etc(
+Threads.h)
+
+- A static eventSink field has been added to the Scene class. The
+eventSink field updates itself once per scene-graph loop and will make all
+the fields routed to it up-to-date at that time.
+
+- Added the PeriodicUpdate field template modifier that can make a field
+make sure it is up-to-date periodically.
+
+- Fixed some bugs with the calibration matrix not working properly for HLHapticsDevice.
+
+- Lots of other smaller bugfixes. See cvs changelog at www.h3d.org:8080
+for details.
+        
+Changes for version 1.1:
+
+New nodes:
+Billboard       
+ClipPlane
+ColorInterpolator
+Composed3DTexture
+CoordinateInterpolator
+FillProperties
+ImageObjectTexture
+ImageTexture3D
+ImportLibrary
+IndexedLineSet
+IndexedTriangleFanSet
+IndexedTriangleSet
+IndexedTriangleStripSet,
+Inline
+KeySensor (shiftKey, altKey and controlKey fields not supported)
+LineSet 
+LineProperies
+MetadataDouble
+MetadataFloat
+MetadataInteger
+MetadataSet
+MetadataString
+NormalInterpolator
+MultiTextureCoordinate
+MultiTextureTransform
+OrientationInterpolator
+Pixel3DTexture
+PointLight
+PointNormalClipPlane
+PointSet
+PositionInterpolator
+RawImageLoader
+ScalarInterpolator
+Switch
+TextureCoordinate3D
+TextureCoordinate4D
+TextureCoordinateGenerator
+TextureMatrixTransform
+TextureTransform3D
+TimeSensor
+TransformInfo
+TriangleFanSet
+TriangleSet
+TriangleStripSet
+        
+- Implemented SFBound for Text node.
+
+- Fixed a bug with MultiTexturing not working. 
+
+- Geometries are now unlit if the Shape node has no Appearance node or the
+Appearance node has no Material node, according to the X3D spec.
+        
+- Added preRender() and postRender() functions to X3DAppearanceNode and
+X3DAppearanceChildNode to be able to save the state before rendering the
+appearance and restoring it after rendering the geometry.
+
+- Moved IndexedFaceSet::SFBound class to CoordBoundField and using that
+instead in IndexedFaceSet.
+
+- Added bounds checks in MField::getValueByIndex() function.
+
+- Texturing is now disabled in IndexedLineSet
+
+- Parsing of SFVec4f, SFVec4d and SFImage when SFImage is a 3D image
+added. 
+
+- Added interpolate field to X3DTexture2DNode to be able to specify if 
+the pixels should be interpolated or not.
+
+- Various changes to support Linux and Mac.
+
+- Some fixes where the OpenGL display list was not rebuild when field
+values changed.
+
+- Fixed a bug where SFNode or MFNode fields could not be declared
+INITIALIZE_ONLY and then be set in the .x3d file (#8)
+
+- Added createX3DNodeFromString, createX3DNodeFromURL and
+createX3DNodeFromStream functions to X3D.h to be able to get the node
+created from the source to be returned directly and not put into a group.
+
+- Matrix3f and Matrix4f is now available in the PythonScript node.
+
+- Fixed a bug in the Box node. There was never any haptics added.
+
+- Fixed a bug in setting up the near and far clip planes (#19)
+
+- TypedSFNode< NodeType >::getValue() function now returns the node type
+specified in the template and not just Node *.
+
+- Slerp function added to Quaternion
+
+- Added DynamicLibrary with functions for loading dynamic libraries. 
+
+- Fixed bugs in stereo rendering.
+
+- Blending is now enabled if texture contains alpha values.
+
+- Rendering stylii before scene in order to make the stylii visible
+through semitransparent objects in the scene.
+
+- Fixed a bug with the positionCalibration matrix in HLHapticsDevice,
+where the matrix used before was the transposed matrx.
+
+- Conversions are now possible between d and f types e.g. Vec3f and
+Vec3d. Matrix3d and Matrix4d added. 
+
+- contactPoint and contactNormal fields in X3DGeometryNode are now in
+local coordinates.
+
+- added H3DDynamicFieldsObject that allows you to add fields to a node
+that are not members of the node, if it inherits from it.
+
+- Lots of minor bugfixes. See cvs changelog at www.h3d.org:8080 for details.

@@ -1,0 +1,1531 @@
+; CPack install script designed for a nmake build
+
+;--------------------------------
+; You must define these values
+
+  !define VERSION "@CPACK_PACKAGE_VERSION@"
+  !define PATCH  "@CPACK_PACKAGE_VERSION_PATCH@"
+  !define INST_DIR "@CPACK_TEMPORARY_DIRECTORY@"
+
+;--------------------------------
+;Variables
+
+  Var MUI_TEMP
+  Var STARTMENU_FOLDER
+  Var SV_ALLUSERS
+  Var START_MENU
+  Var DO_NOT_ADD_TO_PATH
+  Var ADD_TO_PATH_ALL_USERS
+  Var ADD_TO_PATH_CURRENT_USER
+
+  Var IS_DEFAULT_INSTALLDIR
+  ; H3D defined variables
+  Var H3D_VERSION_TO_INSTALL
+  Var ADD_64_BIT_VERSION
+;--------------------------------
+; Include x64 functions
+  !include x64.nsh
+;--------------------------------
+;Include Modern UI
+
+  !include "MUI.nsh"
+
+  ;Default installation folder
+  InstallDir "@CPACK_NSIS_INSTALL_ROOT@\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+
+;--------------------------------
+;General
+
+  ;Name and file
+  Name "@CPACK_NSIS_PACKAGE_NAME@"
+  OutFile "@CPACK_TOPLEVEL_DIRECTORY@/@CPACK_OUTPUT_FILE_NAME@"
+  
+  VIProductVersion                 "@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@.0"
+  VIAddVersionKey ProductName      "H3D"
+  VIAddVersionKey Comments         "H3DAPI"
+  VIAddVersionKey CompanyName      "@CPACK_PACKAGE_VENDOR@" ;this appear as "copyright" under Properties->Details
+  VIAddVersionKey LegalCopyright   "@CPACK_PACKAGE_VENDOR@"
+  VIAddVersionKey FileDescription  "H3DAPI. A cross platform, haptics device independent, X3D based API for 3D graphics and haptics."
+  VIAddVersionKey ProductVersion   @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@
+  VIAddVersionKey LegalTrademarks  "Pte Ltd"
+
+  ;Set compression
+  SetCompressor @CPACK_NSIS_COMPRESSOR@
+
+;--------------------------------
+; H3DAPI added parameters.
+; CPACK_ADD_H3DLOAD_DEMOS_LINKS - If set to "ON" extra start menu links to demos will be added.
+; CPACK_ADD_H3DDOC_LINKS - If set to "ON" extra start menu links to documentation will be added.
+; CPACK_ADD_H3DSETTINGS_LINKS - If set to "ON" extra start menu links to the SettingsGUI.exe will be added.
+; CPACK_EXTERNAL_BIN - Contains the name of the binary folder in External.
+; CPACK_NSIS_INSTALLOPTIONS_64 - Contains the file path to NSIS.InstallOptions_64.ini file which should be used when installing on a 64 bit system.
+@CPACK_NSIS_DEFINES@
+
+  !include Sections.nsh
+
+;--- Component support macros: ---
+; The code for the add/remove functionality is from:
+;   http://nsis.sourceforge.net/Add/Remove_Functionality
+; It has been modified slightly and extended to provide
+; inter-component dependencies.
+Var AR_SecFlags
+Var AR_RegFlags
+@CPACK_NSIS_SECTION_SELECTED_VARS@
+
+; Loads the "selected" flag for the section named SecName into the
+; variable VarName.
+!macro LoadSectionSelectedIntoVar SecName VarName
+ SectionGetFlags ${${SecName}} $${VarName}
+ IntOp $${VarName} $${VarName} & ${SF_SELECTED}  ;Turn off all other bits
+!macroend
+
+; Loads the value of a variable... can we get around this?
+!macro LoadVar VarName
+  IntOp $R0 0 + $${VarName}
+!macroend
+
+; Sets the value of a variable
+!macro StoreVar VarName IntValue
+  IntOp $${VarName} 0 + ${IntValue}
+!macroend
+
+!macro InitSection SecName
+  ;  This macro reads component installed flag from the registry and
+  ;changes checked state of the section on the components page.
+  ;Input: section index constant name specified in Section command.
+   
+  ClearErrors
+  ;Reading component status from registry
+  ReadRegDWORD $AR_RegFlags HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" "Installed"
+  IfErrors "default_${SecName}"
+    ;Status will stay default if registry value not found
+    ;(component was never installed)
+  IntOp $AR_RegFlags $AR_RegFlags & ${SF_SELECTED} ;Turn off all other bits
+  SectionGetFlags ${${SecName}} $AR_SecFlags  ;Reading default section flags
+  IntOp $AR_SecFlags $AR_SecFlags & 0xFFFE  ;Turn lowest (enabled) bit off
+  IntOp $AR_SecFlags $AR_RegFlags | $AR_SecFlags      ;Change lowest bit
+
+  ; Note whether this component was installed before
+  !insertmacro StoreVar ${SecName}_was_installed $AR_RegFlags
+  IntOp $R0 $AR_RegFlags & $AR_RegFlags
+  
+  ;Writing modified flags
+  SectionSetFlags ${${SecName}} $AR_SecFlags
+  
+ "default_${SecName}:"
+ !insertmacro LoadSectionSelectedIntoVar ${SecName} ${SecName}_selected
+!macroend
+ 
+!macro FinishSection SecName
+  ;  This macro reads section flag set by user and removes the section
+  ;if it is not selected.
+  ;Then it writes component installed flag to registry
+  ;Input: section index constant name specified in Section command.
+ 
+  SectionGetFlags ${${SecName}} $AR_SecFlags  ;Reading section flags
+  ;Checking lowest bit:
+  IntOp $AR_SecFlags $AR_SecFlags & ${SF_SELECTED}
+  IntCmp $AR_SecFlags 1 "leave_${SecName}"
+    ;Section is not selected:
+    ;Calling Section uninstall macro and writing zero installed flag
+    !insertmacro "Remove_${${SecName}}"
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
+  "Installed" 0
+    Goto "exit_${SecName}"
+ 
+ "leave_${SecName}:"
+    ;Section is selected:
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@\Components\${SecName}" \
+  "Installed" 1
+ 
+ "exit_${SecName}:"
+!macroend
+ 
+!macro RemoveSection SecName
+  ;  This macro is used to call section's Remove_... macro
+  ;from the uninstaller.
+  ;Input: section index constant name specified in Section command.
+ 
+  !insertmacro "Remove_${${SecName}}"
+!macroend
+
+; Determine whether the selection of SecName changed
+!macro MaybeSelectionChanged SecName
+  !insertmacro LoadVar ${SecName}_selected
+  SectionGetFlags ${${SecName}} $R1
+  IntOp $R1 $R1 & ${SF_SELECTED} ;Turn off all other bits
+  
+  ; See if the status has changed:
+  IntCmp $R0 $R1 "${SecName}_unchanged"
+  !insertmacro LoadSectionSelectedIntoVar ${SecName} ${SecName}_selected
+  
+  IntCmp $R1 ${SF_SELECTED} "${SecName}_was_selected"
+  !insertmacro "Deselect_required_by_${SecName}"
+  goto "${SecName}_unchanged"
+  
+  "${SecName}_was_selected:"
+  !insertmacro "Select_${SecName}_depends"
+  
+  "${SecName}_unchanged:"
+!macroend
+;--- End of Add/Remove macros ---
+
+;--------------------------------
+;Interface Settings
+
+  !define MUI_HEADERIMAGE
+  !define MUI_ABORTWARNING
+
+;--------------------------------
+; path functions
+
+!verbose 3
+!include "WinMessages.NSH"
+!verbose 4
+
+;----------------------------------------
+; based upon a script of "Written by KiCHiK 2003-01-18 05:57:02"
+;----------------------------------------
+!verbose 3
+!include "WinMessages.NSH"
+!verbose 4
+;====================================================
+; get_NT_environment 
+;     Returns: the selected environment
+;     Output : head of the stack
+;====================================================
+!macro select_NT_profile UN
+Function ${UN}select_NT_profile
+   StrCmp $ADD_TO_PATH_ALL_USERS "1" 0 environment_single
+      DetailPrint "Selected environment for all users"
+      Push "all"
+      Return
+   environment_single:
+      DetailPrint "Selected environment for current user only."
+      Push "current"
+      Return
+FunctionEnd
+!macroend
+!insertmacro select_NT_profile ""
+!insertmacro select_NT_profile "un."
+;----------------------------------------------------
+!define NT_current_env 'HKCU "Environment"'
+!define NT_all_env     'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
+
+!ifndef WriteEnvStr_RegKey
+  !ifdef ALL_USERS
+    !define WriteEnvStr_RegKey \
+       'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
+  !else
+    !define WriteEnvStr_RegKey 'HKCU "Environment"'
+  !endif
+!endif
+ 
+; AddToPath - Adds the given dir to the search path.
+;        Input - head of the stack
+;        Note - Win9x systems requires reboot
+ 
+Function AddToPath
+  Exch $0
+  Push $1
+  Push $2
+  Push $3
+ 
+  # don't add if the path doesn't exist
+  IfFileExists "$0\*.*" "" AddToPath_done
+ 
+  ReadEnvStr $1 PATH
+  ; if the path is too long for a NSIS variable NSIS will return a 0 
+  ; length string.  If we find that, then warn and skip any path
+  ; modification as it will trash the existing path.
+  StrLen $2 $1
+  IntCmp $2 0 CheckPathLength_ShowPathWarning CheckPathLength_Done CheckPathLength_Done
+    CheckPathLength_ShowPathWarning:
+    Messagebox MB_OK|MB_ICONEXCLAMATION "Warning! PATH too long installer unable to modify PATH!"
+    Goto AddToPath_done
+  CheckPathLength_Done:
+
+  ; Check if nt and read from registry if it is nt, otherwise use path.
+  ; The reason for this is that when uninstalling a previous installation
+  ; the path environment variable might be modified.
+  Call IsNT
+  Pop $1
+  StrCmp $1 1 ReadFromPath_NT
+    ;Not on NT
+    ReadEnvStr $1 PATH
+    Goto +6
+  ReadFromPath_NT:
+    StrCmp $ADD_TO_PATH_ALL_USERS "1" 0 +3
+      ReadRegStr $1 ${NT_all_env} "PATH"
+      Goto +2
+      ReadRegStr $1 ${NT_current_env} "PATH"
+  Push "$1;"
+  Push "$0;"
+  Call StrStr
+  Pop $2
+  StrCmp $2 "" "" AddToPath_done
+  Push "$1;"
+  Push "$0\;"
+  Call StrStr
+  Pop $2
+  StrCmp $2 "" "" AddToPath_done
+  GetFullPathName /SHORT $3 $0
+  Push "$1;"
+  Push "$3;"
+  Call StrStr
+  Pop $2
+  StrCmp $2 "" "" AddToPath_done
+  Push "$1;"
+  Push "$3\;"
+  Call StrStr
+  Pop $2
+  StrCmp $2 "" "" AddToPath_done
+ 
+  Call IsNT
+  Pop $1
+  StrCmp $1 1 AddToPath_NT
+    ; Not on NT
+    StrCpy $1 $WINDIR 2
+    FileOpen $1 "$1\autoexec.bat" a
+    FileSeek $1 -1 END
+    FileReadByte $1 $2
+    IntCmp $2 26 0 +2 +2 # DOS EOF
+      FileSeek $1 -1 END # write over EOF
+    FileWrite $1 "$\r$\nSET PATH=%PATH%;$3$\r$\n"
+    FileClose $1
+    SetRebootFlag true
+    Goto AddToPath_done
+ 
+  AddToPath_NT:
+    StrCmp $ADD_TO_PATH_ALL_USERS "1" ReadAllKey
+      ReadRegStr $1 ${NT_current_env} "PATH"
+      Goto DoTrim
+    ReadAllKey:
+      ReadRegStr $1 ${NT_all_env} "PATH"
+    DoTrim:
+    StrCmp $1 "" AddToPath_NTdoIt
+      Push $1
+      Call Trim
+      Pop $1
+      StrCpy $0 "$1;$0"
+    AddToPath_NTdoIt:
+      StrCmp $ADD_TO_PATH_ALL_USERS "1" WriteAllKey
+        WriteRegExpandStr ${NT_current_env} "PATH" $0
+        Goto DoSend
+      WriteAllKey:
+        WriteRegExpandStr ${NT_all_env} "PATH" $0
+      DoSend:
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+ 
+  AddToPath_done:
+    Pop $3
+    Pop $2
+    Pop $1
+    Pop $0
+FunctionEnd
+
+ 
+; RemoveFromPath - Remove a given dir from the path
+;     Input: head of the stack
+ 
+Function un.RemoveFromPath
+  Exch $0
+  Push $1
+  Push $2
+  Push $3
+  Push $4
+  Push $5
+  Push $6
+ 
+  IntFmt $6 "%c" 26 # DOS EOF
+ 
+  Call un.IsNT
+  Pop $1
+  StrCmp $1 1 unRemoveFromPath_NT
+    ; Not on NT
+    StrCpy $1 $WINDIR 2
+    FileOpen $1 "$1\autoexec.bat" r
+    GetTempFileName $4
+    FileOpen $2 $4 w
+    GetFullPathName /SHORT $0 $0
+    StrCpy $0 "SET PATH=%PATH%;$0"
+    Goto unRemoveFromPath_dosLoop
+ 
+    unRemoveFromPath_dosLoop:
+      FileRead $1 $3
+      StrCpy $5 $3 1 -1 # read last char
+      StrCmp $5 $6 0 +2 # if DOS EOF
+        StrCpy $3 $3 -1 # remove DOS EOF so we can compare
+      StrCmp $3 "$0$\r$\n" unRemoveFromPath_dosLoopRemoveLine
+      StrCmp $3 "$0$\n" unRemoveFromPath_dosLoopRemoveLine
+      StrCmp $3 "$0" unRemoveFromPath_dosLoopRemoveLine
+      StrCmp $3 "" unRemoveFromPath_dosLoopEnd
+      FileWrite $2 $3
+      Goto unRemoveFromPath_dosLoop
+      unRemoveFromPath_dosLoopRemoveLine:
+        SetRebootFlag true
+        Goto unRemoveFromPath_dosLoop
+ 
+    unRemoveFromPath_dosLoopEnd:
+      FileClose $2
+      FileClose $1
+      StrCpy $1 $WINDIR 2
+      Delete "$1\autoexec.bat"
+      CopyFiles /SILENT $4 "$1\autoexec.bat"
+      Delete $4
+      Goto unRemoveFromPath_done
+ 
+  unRemoveFromPath_NT:
+    StrCmp $ADD_TO_PATH_ALL_USERS "1" unReadAllKey
+      ReadRegStr $1 ${NT_current_env} "PATH"
+      Goto unDoTrim
+    unReadAllKey:
+      ReadRegStr $1 ${NT_all_env} "PATH"
+    unDoTrim:
+    StrCpy $5 $1 1 -1 # copy last char
+    StrCmp $5 ";" +2 # if last char != ;
+      StrCpy $1 "$1;" # append ;
+    Push $1
+    Push "$0;"
+    Call un.StrStr ; Find `$0;` in $1
+    Pop $2 ; pos of our dir
+    StrCmp $2 "" unRemoveFromPath_done
+      ; else, it is in path
+      # $0 - path to add
+      # $1 - path var
+      StrLen $3 "$0;"
+      StrLen $4 $2
+      StrCpy $5 $1 -$4 # $5 is now the part before the path to remove
+      StrCpy $6 $2 "" $3 # $6 is now the part after the path to remove
+      StrCpy $3 $5$6
+ 
+      StrCpy $5 $3 1 -1 # copy last char
+      StrCmp $5 ";" 0 +2 # if last char == ;
+        StrCpy $3 $3 -1 # remove last char
+ 
+      StrCmp $ADD_TO_PATH_ALL_USERS "1" unWriteAllKey
+        WriteRegExpandStr ${NT_current_env} "PATH" $3
+        Goto unDoSend
+      unWriteAllKey:
+        WriteRegExpandStr ${NT_all_env} "PATH" $3
+      unDoSend:
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+ 
+  unRemoveFromPath_done:
+    Pop $6
+    Pop $5
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
+    Pop $0
+FunctionEnd
+
+#
+# WriteEnvStr - Writes an environment variable
+# Note: Win9x systems requires reboot
+#
+# Example:
+#  Push "HOMEDIR"           # name
+#  Push "C:\New Home Dir\"  # value
+#  Call WriteEnvStr
+#
+Function WriteEnvStr
+  Exch $1 ; $1 has environment variable value
+  Exch
+  Exch $0 ; $0 has environment variable name
+  Push $2
+ 
+  Call IsNT
+  Pop $2
+  StrCmp $2 1 WriteEnvStr_NT
+    ; Not on NT
+    StrCpy $2 $WINDIR 2 ; Copy drive of windows (c:)
+    FileOpen $2 "$2\autoexec.bat" a
+    FileSeek $2 0 END
+    FileWrite $2 "$\r$\nSET $0=$1$\r$\n"
+    FileClose $2
+    SetRebootFlag true
+    Goto WriteEnvStr_done
+ 
+  WriteEnvStr_NT:
+      StrCmp $ADD_TO_PATH_ALL_USERS "1" 0 +3
+        WriteRegExpandStr ${NT_all_env} $0 $1
+        Goto +2
+        WriteRegExpandStr ${NT_current_env} $0 $1
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+        0 "STR:Environment" /TIMEOUT=5000
+ 
+  WriteEnvStr_done:
+    Pop $2
+    Pop $0
+    Pop $1
+FunctionEnd
+ 
+#
+# un.DeleteEnvStr - Removes an environment variable
+# Note: Win9x systems requires reboot
+#
+# Example:
+#  Push "HOMEDIR"           # name
+#  Call un.DeleteEnvStr
+#
+Function un.DeleteEnvStr
+  Exch $0 ; $0 now has the name of the variable
+  Push $1
+  Push $2
+  Push $3
+  Push $4
+  Push $5
+ 
+  Call un.IsNT
+  Pop $1
+  StrCmp $1 1 DeleteEnvStr_NT
+    ; Not on NT
+    StrCpy $1 $WINDIR 2
+    FileOpen $1 "$1\autoexec.bat" r
+    GetTempFileName $4
+    FileOpen $2 $4 w
+    StrCpy $0 "SET $0="
+    SetRebootFlag true
+ 
+    DeleteEnvStr_dosLoop:
+      FileRead $1 $3
+      StrLen $5 $0
+      StrCpy $5 $3 $5
+      StrCmp $5 $0 DeleteEnvStr_dosLoop
+      StrCmp $5 "" DeleteEnvStr_dosLoopEnd
+      FileWrite $2 $3
+      Goto DeleteEnvStr_dosLoop
+ 
+    DeleteEnvStr_dosLoopEnd:
+      FileClose $2
+      FileClose $1
+      StrCpy $1 $WINDIR 2
+      Delete "$1\autoexec.bat"
+      CopyFiles /SILENT $4 "$1\autoexec.bat"
+      Delete $4
+      Goto DeleteEnvStr_done
+ 
+  DeleteEnvStr_NT:
+    StrCmp $ADD_TO_PATH_ALL_USERS "1" 0 +3
+      DeleteRegValue ${NT_all_env} $0
+      Goto +2
+      DeleteRegValue ${NT_current_env} $0
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+      0 "STR:Environment" /TIMEOUT=5000
+ 
+  DeleteEnvStr_done:
+    Pop $5
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
+    Pop $0
+FunctionEnd 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Uninstall stuff
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+###########################################
+#            Utility Functions            #
+###########################################
+ 
+;====================================================
+; IsNT - Returns 1 if the current system is NT, 0
+;        otherwise.
+;     Output: head of the stack
+;====================================================
+; IsNT
+; no input
+; output, top of the stack = 1 if NT or 0 if not
+;
+; Usage:
+;   Call IsNT
+;   Pop $R0
+;  ($R0 at this point is 1 or 0)
+ 
+!macro IsNT un
+Function ${un}IsNT
+  Push $0
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  StrCmp $0 "" 0 IsNT_yes
+  ; we are not NT.
+  Pop $0
+  Push 0
+  Return
+ 
+  IsNT_yes:
+    ; NT!!!
+    Pop $0
+    Push 1
+FunctionEnd
+!macroend
+!insertmacro IsNT ""
+!insertmacro IsNT "un."
+ 
+; StrStr
+; input, top of stack = string to search for
+;        top of stack-1 = string to search in
+; output, top of stack (replaces with the portion of the string remaining)
+; modifies no other variables.
+;
+; Usage:
+;   Push "this is a long ass string"
+;   Push "ass"
+;   Call StrStr
+;   Pop $R0
+;  ($R0 at this point is "ass string")
+ 
+!macro StrStr un
+Function ${un}StrStr
+Exch $R1 ; st=haystack,old$R1, $R1=needle
+  Exch    ; st=old$R1,haystack
+  Exch $R2 ; st=old$R1,old$R2, $R2=haystack
+  Push $R3
+  Push $R4
+  Push $R5
+  StrLen $R3 $R1
+  StrCpy $R4 0
+  ; $R1=needle
+  ; $R2=haystack
+  ; $R3=len(needle)
+  ; $R4=cnt
+  ; $R5=tmp
+  loop:
+    StrCpy $R5 $R2 $R3 $R4
+    StrCmp $R5 $R1 done
+    StrCmp $R5 "" done
+    IntOp $R4 $R4 + 1
+    Goto loop
+done:
+  StrCpy $R1 $R2 "" $R4
+  Pop $R5
+  Pop $R4
+  Pop $R3
+  Pop $R2
+  Exch $R1
+FunctionEnd
+!macroend
+!insertmacro StrStr ""
+!insertmacro StrStr "un."
+
+Function Trim ; Added by Pelaca
+  Exch $R1
+  Push $R2
+Loop:
+  StrCpy $R2 "$R1" 1 -1
+  StrCmp "$R2" " " RTrim
+  StrCmp "$R2" "$\n" RTrim
+  StrCmp "$R2" "$\r" RTrim
+  StrCmp "$R2" ";" RTrim
+  GoTo Done
+RTrim:  
+  StrCpy $R1 "$R1" -1
+  Goto Loop
+Done:
+  Pop $R2
+  Exch $R1
+FunctionEnd
+
+Function ConditionalAddToRegisty
+  Pop $0
+  Pop $1
+  StrCmp "$0" "" ConditionalAddToRegisty_EmptyString
+    WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" \
+    "$1" "$0"
+    ;MessageBox MB_OK "Set Registry: '$1' to '$0'"
+    DetailPrint "Set install registry entry: '$1' to '$0'"
+  ConditionalAddToRegisty_EmptyString:
+FunctionEnd
+
+;--------------------------------
+
+!ifdef CPACK_USES_DOWNLOAD
+Function DownloadFile
+    IfFileExists $INSTDIR\* +2
+    CreateDirectory $INSTDIR
+    Pop $0
+
+    ; Skip if already downloaded
+    IfFileExists $INSTDIR\$0 0 +2
+    Return
+
+    StrCpy $1 "@CPACK_DOWNLOAD_SITE@"
+
+  try_again:
+    NSISdl::download "$1/$0" "$INSTDIR\$0"
+    
+    Pop $1
+    StrCmp $1 "success" success
+    StrCmp $1 "Cancelled" cancel
+    MessageBox MB_OK "Download failed: $1"
+  cancel:
+    Return
+  success:
+FunctionEnd
+!endif
+
+;--------------------------------
+; Installation types
+@CPACK_NSIS_INSTALLATION_TYPES@
+
+;--------------------------------
+; Component sections
+@CPACK_NSIS_COMPONENT_SECTIONS@
+
+;--------------------------------
+; Define some macro setting for the gui
+@CPACK_NSIS_INSTALLER_MUI_ICON_CODE@
+@CPACK_NSIS_INSTALLER_ICON_CODE@
+@CPACK_NSIS_INSTALLER_MUI_COMPONENTS_DESC@
+@CPACK_NSIS_INSTALLER_MUI_FINISHPAGE_RUN_CODE@
+
+;--------------------------------
+;Pages
+  !insertmacro MUI_PAGE_WELCOME
+
+  !insertmacro MUI_PAGE_LICENSE "@CPACK_RESOURCE_FILE_LICENSE@"
+  Page custom InstallOptionsPage
+  !insertmacro MUI_PAGE_DIRECTORY
+  
+  ;Start Menu Folder Page Configuration
+  !define MUI_STARTMENUPAGE_REGISTRY_ROOT "SHCTX" 
+  !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" 
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
+  !insertmacro MUI_PAGE_STARTMENU Application $STARTMENU_FOLDER
+
+  @CPACK_NSIS_PAGE_COMPONENTS@
+
+  !insertmacro MUI_PAGE_INSTFILES
+  !insertmacro MUI_PAGE_FINISH
+
+  !insertmacro MUI_UNPAGE_CONFIRM
+  !insertmacro MUI_UNPAGE_INSTFILES
+
+;--------------------------------
+;Languages
+
+  !insertmacro MUI_LANGUAGE "English" ;first language is the default language
+  !insertmacro MUI_LANGUAGE "Albanian"
+  !insertmacro MUI_LANGUAGE "Arabic"
+  !insertmacro MUI_LANGUAGE "Basque"
+  !insertmacro MUI_LANGUAGE "Belarusian"
+  !insertmacro MUI_LANGUAGE "Bosnian"
+  !insertmacro MUI_LANGUAGE "Breton"
+  !insertmacro MUI_LANGUAGE "Bulgarian"
+  !insertmacro MUI_LANGUAGE "Croatian"
+  !insertmacro MUI_LANGUAGE "Czech"
+  !insertmacro MUI_LANGUAGE "Danish"
+  !insertmacro MUI_LANGUAGE "Dutch"
+  !insertmacro MUI_LANGUAGE "Estonian"
+  !insertmacro MUI_LANGUAGE "Farsi"
+  !insertmacro MUI_LANGUAGE "Finnish"
+  !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "German"
+  !insertmacro MUI_LANGUAGE "Greek"
+  !insertmacro MUI_LANGUAGE "Hebrew"
+  !insertmacro MUI_LANGUAGE "Hungarian"
+  !insertmacro MUI_LANGUAGE "Icelandic"
+  !insertmacro MUI_LANGUAGE "Indonesian"
+  !insertmacro MUI_LANGUAGE "Irish"
+  !insertmacro MUI_LANGUAGE "Italian"
+  !insertmacro MUI_LANGUAGE "Japanese"
+  !insertmacro MUI_LANGUAGE "Korean"
+  !insertmacro MUI_LANGUAGE "Kurdish"
+  !insertmacro MUI_LANGUAGE "Latvian"
+  !insertmacro MUI_LANGUAGE "Lithuanian"
+  !insertmacro MUI_LANGUAGE "Luxembourgish"
+  !insertmacro MUI_LANGUAGE "Macedonian"
+  !insertmacro MUI_LANGUAGE "Malay"
+  !insertmacro MUI_LANGUAGE "Mongolian"
+  !insertmacro MUI_LANGUAGE "Norwegian"
+  !insertmacro MUI_LANGUAGE "Polish"
+  !insertmacro MUI_LANGUAGE "Portuguese"
+  !insertmacro MUI_LANGUAGE "PortugueseBR"
+  !insertmacro MUI_LANGUAGE "Romanian"
+  !insertmacro MUI_LANGUAGE "Russian"
+  !insertmacro MUI_LANGUAGE "Serbian"
+  !insertmacro MUI_LANGUAGE "SerbianLatin"
+  !insertmacro MUI_LANGUAGE "SimpChinese"
+  !insertmacro MUI_LANGUAGE "Slovak"
+  !insertmacro MUI_LANGUAGE "Slovenian"
+  !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "Swedish"
+  !insertmacro MUI_LANGUAGE "Thai"
+  !insertmacro MUI_LANGUAGE "TradChinese"
+  !insertmacro MUI_LANGUAGE "Turkish"
+  !insertmacro MUI_LANGUAGE "Ukrainian"
+  !insertmacro MUI_LANGUAGE "Welsh"
+
+
+;--------------------------------
+;Reserve Files
+
+  ;These files should be inserted before other files in the data block
+  ;Keep these lines before any File command
+  ;Only for solid compression (by default, solid compression is enabled for BZIP2 and LZMA)
+
+  ReserveFile "NSIS.InstallOptions.ini"
+  !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+
+;--------------------------------
+;Installer Sections
+
+Section "-Core installation"
+  ;Use the entire tree produced by the INSTALL target.  Keep the
+  ;list of directories here in sync with the RMDir commands below.
+  SetOutPath "$INSTDIR"
+  @CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS@
+  @CPACK_NSIS_FULL_INSTALL@
+  
+  ;Store installation folder
+  WriteRegStr SHCTX "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "" $INSTDIR
+  
+  ;Create uninstaller
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
+  Push "DisplayName"
+  Push "@CPACK_NSIS_DISPLAY_NAME@"
+  Call ConditionalAddToRegisty
+  Push "DisplayVersion"
+  Push "@CPACK_PACKAGE_VERSION@"
+  Call ConditionalAddToRegisty
+  Push "Publisher"
+  Push "@CPACK_PACKAGE_VENDOR@"
+  Call ConditionalAddToRegisty
+  Push "UninstallString"
+  Push "$INSTDIR\Uninstall.exe"
+  Call ConditionalAddToRegisty
+  Push "NoRepair"
+  Push "1"
+  Call ConditionalAddToRegisty
+  
+  !ifdef CPACK_NSIS_ADD_REMOVE
+  ;Create add/remove functionality
+  Push "ModifyPath"
+  Push "$INSTDIR\AddRemove.exe"
+  Call ConditionalAddToRegisty
+  !else
+  Push "NoModify"
+  Push "1"
+  Call ConditionalAddToRegisty
+  !endif
+  
+  ; Optional registration
+  Push "DisplayIcon"
+  Push "$INSTDIR\@CPACK_NSIS_INSTALLED_ICON_NAME@"
+  Call ConditionalAddToRegisty
+  Push "HelpLink"
+  Push "@CPACK_NSIS_HELP_LINK@"
+  Call ConditionalAddToRegisty
+  Push "URLInfoAbout"
+  Push "@CPACK_NSIS_URL_INFO_ABOUT@"
+  Call ConditionalAddToRegisty
+  Push "Contact"
+  Push "@CPACK_NSIS_CONTACT@"
+  Call ConditionalAddToRegisty
+
+  !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
+  
+  ;Read a value from an InstallOptions INI file
+  !insertmacro MUI_INSTALLOPTIONS_READ $DO_NOT_ADD_TO_PATH "NSIS.InstallOptions.ini" "Field 2" "State"
+  !insertmacro MUI_INSTALLOPTIONS_READ $ADD_TO_PATH_ALL_USERS "NSIS.InstallOptions.ini" "Field 3" "State"
+  !insertmacro MUI_INSTALLOPTIONS_READ $ADD_TO_PATH_CURRENT_USER "NSIS.InstallOptions.ini" "Field 4" "State"
+  ${If} ${RunningX64}
+    !insertmacro MUI_INSTALLOPTIONS_READ $ADD_64_BIT_VERSION "NSIS.InstallOptions.ini" "Field 5" "State"
+  ${Else}
+    StrCpy $ADD_64_BIT_VERSION "0"
+  ${EndIf}
+  StrCmp $ADD_64_BIT_VERSION "1" 0 +3
+    StrCpy $H3D_VERSION_TO_INSTALL "bin64"
+    Goto +2
+    StrCpy $H3D_VERSION_TO_INSTALL "bin32"
+  
+  ;Create shortcuts
+  CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
+@CPACK_NSIS_CREATE_ICONS@
+@CPACK_NSIS_CREATE_ICONS_EXTRA@
+  ${If} $H3DAPI_cpack_runtime_selected > 0
+    CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\H3DViewer.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"'
+  ${EndIf}
+  
+  StrCmp "@CPACK_ADD_H3DLOAD_DEMOS_LINKS@" "ON" 0 AddedH3DLoadDemosDone
+    IntOp $0 $H3DAPI_cpack_sources_selected | $MedX3D_cpack_sources_selected
+    IntOp $0 $0 | $UI_cpack_sources_selected
+    IntOp $0 $0 | $H3DPhysics_cpack_sources_selected
+    
+    ;Create Demos folder.
+    ${If} $0 > 0
+      CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER\Demos"
+    ${EndIf}
+
+    ;Add Example shortcuts.
+    ${If} $H3DAPI_cpack_sources_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Cg Glass Shader.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\Shader nodes\cg_glass.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Cubemap.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\CubeMap\CubeMap.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Deformable Shape.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\DeformableShape\deform.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Depth map surface.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\DepthMapSurface\depthMappedITS.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Dynamic.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\DynamicTransform\dynamic.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Fish.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\x3dmodels\fish\Kumanomi.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Flight.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\flight\flight.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Force Field.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\ForceEffects\forcefield.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\GLSL Earth Shader.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\Shader nodes\glsl_earthshader.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Haptic Layers.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\HapticLayers\hapticLayers.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Sound.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\Sound\Sound.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\SpaceTennis.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\SpaceTennis\SpaceTennis.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Spring.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DLoad.exe"' '"$INSTDIR\H3DAPI\examples\ForceEffects\springs.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+    ${EndIf}
+    
+    ${If} $MedX3D_cpack_sources_selected > 0
+      StrCmp "@CPACK_ADD_MedX3D_DEMOS_LINKS@" "ON" 0 +3
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\OpacityMappedFoot.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\MedX3D\x3d\OpacityMapVolumeStyle.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Segmented head.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\MedX3D\x3d\SegmentedVolumeData.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+    ${EndIf}
+    
+    ${If} $UI_cpack_sources_selected > 0
+      StrCmp "@CPACK_ADD_UI_DEMOS_LINKS@" "ON" 0 +2
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\UI Demo.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\UI\x3d\Super_UI_Demo.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+    ${EndIf}
+    
+    ${If} $H3DPhysics_cpack_sources_selected > 0
+      StrCmp "@CPACK_ADD_H3DPhysics_DEMOS_LINKS@" "ON" 0 +2
+        CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\Tower.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\H3DPhysics\examples\Tower\Tower.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      ${If} $UI_cpack_sources_selected > 0
+        StrCmp "@CPACK_ADD_H3DPhysics_DEMOS_LINKS@" "ON" 0 +2
+          CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\NewtonsCradle.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\H3DPhysics\examples\NewtonsCradle\NewtonsCradle.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+      ${EndIf}
+    ${EndIf}
+    StrCmp "@CPACK_ADD_VHTK_DEMOS_LINKS@" "ON" 0 +2
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Demos\VHTK Demo.lnk" '"$INSTDIR\$H3D_VERSION_TO_INSTALL\H3DViewer.exe"' '"$INSTDIR\H3DAPI\examples\VHTK\x3d\setup_dichloroethane2.x3d"' "$INSTDIR\H3DAPI\settings\icons\gem.ico"
+
+  AddedH3DLoadDemosDone:
+
+  StrCmp "@CPACK_ADD_H3DDOC_LINKS@" "ON" 0 doc_links_added
+    ;Create Docs folder.
+    CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER\Docs"
+    ; Add reference guide and manuals
+    ${If} $H3DAPI_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\C++ Reference Guide.lnk" "$INSTDIR\doc\H3DAPI\html\index.html"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\H3D Python Reference Guide.lnk" "$INSTDIR\H3DAPI\lib\doc\html\index.html"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\H3D API Manual.lnk" "$INSTDIR\doc\H3D API Manual.pdf"
+    ${ElseIf} $HAPI_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\C++ Reference Guide.lnk" "$INSTDIR\doc\HAPI\html\index.html"
+    ${ElseIf} $H3DUtil_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\C++ Reference Guide.lnk" "$INSTDIR\doc\H3DUtil\html\index.html"
+    ${EndIf}
+    ${If} $HAPI_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\HAPI Manual.lnk" "$INSTDIR\doc\HAPI Manual.pdf"
+    ${EndIf}
+    ${If} $H3DPhysics_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\H3DPhysics C++ Reference Guide.lnk" "$INSTDIR\H3DPhysics\doc\html\index.html"
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\H3DPhysics Python Reference Guide.lnk" "$INSTDIR\H3DPhysics\doc\python\doc\html\index.html"
+    ${EndIf}
+    ${If} $MedX3D_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\MedX3D C++ Reference Guide.lnk" "$INSTDIR\MedX3D\doc\html\index.html"
+    ${EndIf}
+    ${If} $UI_cpack_headers_selected > 0
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Docs\UI C++ Reference Guide.lnk" "$INSTDIR\UI\doc\html\index.html"
+    ${EndIf}
+  doc_links_added:
+  
+  ${If} $H3DAPI_cpack_runtime_selected > 0
+    StrCmp "@CPACK_ADD_H3DSETTINGS_LINKS@" "ON" 0 +4
+      ; Add link to settingsGUI.exe
+      SetOutPath $INSTDIR\H3DAPI\settings
+      CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\H3DLoad settings.lnk" "$INSTDIR\H3DAPI\settings\SettingsGUI.exe" "" "$INSTDIR\H3DAPI\settings\icons\settings.ico"
+      SetOutPath $INSTDIR
+  ${EndIf}
+
+  CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+
+  ; Write special uninstall registry entries
+  Push "StartMenu"
+  Push "$STARTMENU_FOLDER"
+  Call ConditionalAddToRegisty
+  Push "DoNotAddToPath"
+  Push "$DO_NOT_ADD_TO_PATH"
+  Call ConditionalAddToRegisty
+  Push "AddToPathAllUsers"
+  Push "$ADD_TO_PATH_ALL_USERS"
+  Call ConditionalAddToRegisty
+  Push "AddToPathCurrentUser"
+  Push "$ADD_TO_PATH_CURRENT_USER"
+  Call ConditionalAddToRegisty
+  Push "H3DVersionToInstall"
+  Push "$H3D_VERSION_TO_INSTALL"
+  Call ConditionalAddToRegisty
+
+  !insertmacro MUI_STARTMENU_WRITE_END
+
+@CPACK_NSIS_EXTRA_INSTALL_COMMANDS@
+
+  
+  StrCmp $ADD_64_BIT_VERSION "1" 0 +14
+    Rename "$INSTDIR\H3DUtil\include\H3DUtil\H3DUtil.h" "$INSTDIR\H3DUtil\include\H3DUtil\H3DUtil_32.h"
+    Rename "$INSTDIR\H3DUtil\include\H3DUtil\H3DUtil_64.h" "$INSTDIR\H3DUtil\include\H3DUtil\H3DUtil.h"
+    Rename "$INSTDIR\HAPI\include\HAPI\HAPI.h" "$INSTDIR\HAPI\include\HAPI\HAPI_32.h"
+    Rename "$INSTDIR\HAPI\include\HAPI\HAPI_64.h" "$INSTDIR\HAPI\include\HAPI\HAPI.h"
+    Rename "$INSTDIR\H3DAPI\include\H3D\H3DApi.h" "$INSTDIR\H3DAPI\include\H3D\H3DApi_32.h"
+    Rename "$INSTDIR\H3DAPI\include\H3D\H3DApi_64.h" "$INSTDIR\H3DAPI\include\H3D\H3DApi.h"
+    Rename "$INSTDIR\MedX3D\include\H3D\MedX3D\MedX3D.h" "$INSTDIR\MedX3D\include\H3D\MedX3D\MedX3D_32.h"
+    Rename "$INSTDIR\MedX3D\include\H3D\MedX3D\MedX3D_64.h" "$INSTDIR\MedX3D\include\H3D\MedX3D\MedX3D.h"
+    Rename "$INSTDIR\H3DPhysics\include\H3D\H3DPhysics\H3DPhysics.h" "$INSTDIR\H3DPhysics\include\H3D\H3DPhysics\H3DPhysics_32.h"
+    Rename "$INSTDIR\H3DPhysics\include\H3D\H3DPhysics\H3DPhysics_64.h" "$INSTDIR\H3DPhysics\include\H3D\H3DPhysics\H3DPhysics.h"
+    Rename "$INSTDIR\UI\include\H3D\UI\UI.h" "$INSTDIR\UI\include\H3D\UI\UI_32.h"
+    Rename "$INSTDIR\UI\include\H3D\UI\UI_64.h" "$INSTDIR\UI\include\H3D\UI\UI.h"
+    ClearErrors
+  
+  Push H3D_ROOT
+  Push $INSTDIR\H3DAPI
+  Call WriteEnvStr
+  
+  Push H3D_EXTERNAL_ROOT
+  Push $INSTDIR\External
+  Call WriteEnvStr
+
+SectionEnd
+
+Section "-Add to path"
+   DetailPrint "Add $INSTDIR\$H3D_VERSION_TO_INSTALL to PATH"
+  Push $INSTDIR\$H3D_VERSION_TO_INSTALL
+  StrCmp "@CPACK_NSIS_MODIFY_PATH@" "ON" 0 doNotAddToPath
+  StrCmp $DO_NOT_ADD_TO_PATH "1" doNotAddToPath 0
+    Call AddToPath
+    Push $INSTDIR\External\$H3D_VERSION_TO_INSTALL
+    Call AddToPath
+  doNotAddToPath:
+SectionEnd
+
+;--------------------------------
+; Create custom pages
+Function InstallOptionsPage
+  !insertmacro MUI_HEADER_TEXT "Install Options" "Choose options for installing @CPACK_NSIS_PACKAGE_NAME@"
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY "NSIS.InstallOptions.ini"
+
+FunctionEnd
+
+;--------------------------------
+; determine admin versus local install
+Function un.onInit
+  StrCmp "@CPACK_H3D_64_BIT@" "TRUE" 0 done_64_bit_checking_uninit
+    ${If} ${RunningX64}
+      DetailPrint "Installer running on 64-bit host"
+      ; disable registry redirection (enable access to 64-bit portion of registry)
+      ; This is needed in order to read correct registry information about python.
+      SetRegView 64
+    ${EndIf}
+  done_64_bit_checking_uninit:
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors noLM
+  Pop $0
+  UserInfo::GetAccountType
+  Pop $1
+  StrCmp $1 "Admin" 0 +3
+    SetShellVarContext all
+    ;MessageBox MB_OK 'User "$0" is in the Admin group'
+    Goto done
+  StrCmp $1 "Power" 0 +3
+    SetShellVarContext all
+    ;MessageBox MB_OK 'User "$0" is in the Power Users group'
+    Goto done
+    
+  noLM:
+    ;Get installation folder from registry if available
+
+  done:
+FunctionEnd
+
+;--- Add/Remove callback functions: ---
+!macro SectionList MacroName
+  ;This macro used to perform operation on multiple sections.
+  ;List all of your components in following manner here.
+@CPACK_NSIS_COMPONENT_SECTION_LIST@
+!macroend
+ 
+Section -FinishComponents
+  ;Removes unselected components and writes component status to registry
+  !insertmacro SectionList "FinishSection"
+  
+!ifdef CPACK_NSIS_ADD_REMOVE  
+  ; Get the name of the installer executable
+  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024) i r1'
+  StrCpy $R3 $R0
+  
+  ; Strip off the last 13 characters, to see if we have AddRemove.exe
+  StrLen $R1 $R0
+  IntOp $R1 $R0 - 13
+  StrCpy $R2 $R0 13 $R1
+  StrCmp $R2 "AddRemove.exe" addremove_installed
+  
+  ; We're not running AddRemove.exe, so install it
+  CopyFiles $R3 $INSTDIR\AddRemove.exe
+  
+  addremove_installed:
+!endif
+SectionEnd
+;--- End of Add/Remove callback functions ---
+
+;--------------------------------
+; Component dependencies
+Function .onSelChange
+  !insertmacro SectionList MaybeSelectionChanged
+FunctionEnd
+
+;--------------------------------
+;Uninstaller Section
+
+Section "Uninstall"
+  ReadRegStr $START_MENU SHCTX \
+   "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "StartMenu"
+  ;MessageBox MB_OK "Start menu is in: $START_MENU"
+  ReadRegStr $DO_NOT_ADD_TO_PATH SHCTX \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "DoNotAddToPath"
+  ReadRegStr $ADD_TO_PATH_ALL_USERS SHCTX \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "AddToPathAllUsers"
+  ReadRegStr $ADD_TO_PATH_CURRENT_USER SHCTX \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "AddToPathCurrentUser"
+  ReadRegStr $H3D_VERSION_TO_INSTALL SHCTX \
+    "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" "H3DVersionToInstall"
+  ;MessageBox MB_OK "Add to path: $DO_NOT_ADD_TO_PATH all users: $ADD_TO_PATH_ALL_USERS"
+
+@CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS@
+
+  Delete "$INSTDIR\H3DUtil\include\H3DUtil\H3DUtil_32.h"
+  Delete "$INSTDIR\HAPI\include\HAPI\HAPI_32.h"
+  Delete "$INSTDIR\H3DAPI\include\H3D\H3DApi_32.h"
+  Delete "$INSTDIR\H3DPhysics\include\H3D\H3DPhysics\H3DPhysics_32.h"
+  Delete "$INSTDIR\MedX3D\include\H3D\MedX3D\MedX3D_32.h"
+  Delete "$INSTDIR\UI\include\H3D\UI\UI_32.h"
+
+  ;Remove files we installed.
+  ;Keep the list of directories here in sync with the File commands above.
+@CPACK_NSIS_DELETE_FILES@
+@CPACK_NSIS_DELETE_DIRECTORIES@
+
+!ifdef CPACK_NSIS_ADD_REMOVE  
+  ;Remove the add/remove program
+  Delete "$INSTDIR\AddRemove.exe"
+!endif
+
+  ;Remove the uninstaller itself.
+  Delete "$INSTDIR\Uninstall.exe"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
+
+  ;Remove the installation directory if it is empty.
+  RMDir "$INSTDIR"
+
+  ; Remove the registry entries.
+  DeleteRegKey SHCTX "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
+
+  ; Removes all optional components
+  !insertmacro SectionList "RemoveSection"
+  
+  !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
+    
+  Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
+@CPACK_NSIS_DELETE_ICONS@
+@CPACK_NSIS_DELETE_ICONS_EXTRA@
+  Delete "$SMPROGRAMS\$MUI_TEMP\H3DViewer.lnk"
+  StrCmp "@CPACK_ADD_H3DLOAD_DEMOS_LINKS@" "ON" 0 RemovedH3DLoadDemos1Done
+    ;Delete Demos menu links
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Cg Glass Shader.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Cubemap.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Deformable Shape.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Depth map surface.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Dynamic.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Fish.lnk"      
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Flight.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Force Field.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\GLSL Earth Shader.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Haptic Layers.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Sound.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\SpaceTennis.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Spring.lnk"
+    
+    StrCmp "@CPACK_ADD_MedX3D_DEMOS_LINKS@" "ON" 0 +3
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\OpacityMappedFoot.lnk"
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Segmented head.lnk"
+        
+    StrCmp "@CPACK_ADD_UI_DEMOS_LINKS@" "ON" 0 +2
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\UI Demo.lnk"
+        
+    StrCmp "@CPACK_ADD_H3DPhysics_DEMOS_LINKS@" "ON" 0 +3
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Tower.lnk"
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\NewtonsCradle.lnk"
+    
+    StrCmp "@CPACK_ADD_VHTK_DEMOS_LINKS@" "ON" 0 +2
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\VHTK Demo.lnk"
+    
+    ;Delete the Demos folder in start menu
+    RMDir "$SMPROGRAMS\$MUI_TEMP\Demos"
+
+  RemovedH3DLoadDemos1Done:
+
+  StrCmp "@CPACK_ADD_H3DDOC_LINKS@" "ON" 0 doc_links_removed
+    ; Remove links to reference guide and manuals
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3D Python Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3D API Manual.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\HAPI Manual.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3DPhysics C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3DPhysics Python Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\MedX3D C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\UI C++ Reference Guide.lnk"
+    
+    ;Remove Docs folder.
+    RMDir "$SMPROGRAMS\$MUI_TEMP\Docs"
+    
+  doc_links_removed:
+  
+  StrCmp "@CPACK_ADD_H3DSETTINGS_LINKS@" "ON" 0 +2
+    ; Remove link to settingsGUI.exe
+    Delete "$SMPROGRAMS\$MUI_TEMP\H3DLoad settings.lnk"
+  
+  ;Delete empty start menu parent diretories
+  StrCpy $MUI_TEMP "$SMPROGRAMS\$MUI_TEMP"
+ 
+  startMenuDeleteLoop:
+    ClearErrors
+    RMDir $MUI_TEMP
+    GetFullPathName $MUI_TEMP "$MUI_TEMP\.."
+    
+    IfErrors startMenuDeleteLoopDone
+  
+    StrCmp "$MUI_TEMP" "$SMPROGRAMS" startMenuDeleteLoopDone startMenuDeleteLoop
+  startMenuDeleteLoopDone:
+
+  ; If the user changed the shortcut, then untinstall may not work. This should
+  ; try to fix it.
+  StrCpy $MUI_TEMP "$START_MENU"
+  Delete "$SMPROGRAMS\$MUI_TEMP\Uninstall.lnk"
+@CPACK_NSIS_DELETE_ICONS_EXTRA@
+  Delete "$SMPROGRAMS\$MUI_TEMP\H3DViewer.lnk"
+  StrCmp "@CPACK_ADD_H3DLOAD_DEMOS_LINKS@" "ON" 0 RemovedH3DLoadDemos2Done
+    ;Delete Demos menu links
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Cg Glass Shader.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Cubemap.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Deformable Shape.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Depth map surface.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Dynamic.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Fish.lnk"      
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Flight.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Force Field.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\GLSL Earth Shader.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Haptic Layers.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Sound.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\SpaceTennis.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Spring.lnk"
+    
+    StrCmp "@CPACK_ADD_MedX3D_DEMOS_LINKS@" "ON" 0 +3
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\OpacityMappedFoot.lnk"
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Segmented head.lnk"
+        
+    StrCmp "@CPACK_ADD_UI_DEMOS_LINKS@" "ON" 0 +2
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\UI Demo.lnk"
+        
+    StrCmp "@CPACK_ADD_H3DPhysics_DEMOS_LINKS@" "ON" 0 +3
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\Tower.lnk"
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\NewtonsCradle.lnk"
+    
+    StrCmp "@CPACK_ADD_VHTK_DEMOS_LINKS@" "ON" 0 +2
+      Delete "$SMPROGRAMS\$MUI_TEMP\Demos\VHTK Demo.lnk"
+    
+    ;Delete the Demos folder in start menu
+    RMDir "$SMPROGRAMS\$MUI_TEMP\Demos"
+
+  RemovedH3DLoadDemos2Done:
+
+  ; Remove links to reference guide and manuals
+  StrCmp "@CPACK_ADD_H3DDOC_LINKS@" "ON" 0 doc_links_removed2
+    ; Remove links to reference guide and manuals
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3D Python Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3D API Manual.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\HAPI Manual.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3DPhysics C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\H3DPhysics Python Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\MedX3D C++ Reference Guide.lnk"
+    Delete "$SMPROGRAMS\$MUI_TEMP\Docs\UI C++ Reference Guide.lnk"
+    
+    ;Remove Docs folder.
+    RMDir "$SMPROGRAMS\$MUI_TEMP\Docs"
+    
+  doc_links_removed2:
+  
+  StrCmp "@CPACK_ADD_H3DSETTINGS_LINKS@" "ON" 0 +2
+    ; Remove link to settingsGUI.exe
+    Delete "$SMPROGRAMS\$MUI_TEMP\H3DLoad settings.lnk"
+  
+  ;Delete empty start menu parent diretories
+  StrCpy $MUI_TEMP "$SMPROGRAMS\$MUI_TEMP"
+ 
+  secondStartMenuDeleteLoop:
+    ClearErrors
+    RMDir $MUI_TEMP
+    GetFullPathName $MUI_TEMP "$MUI_TEMP\.."
+    
+    IfErrors secondStartMenuDeleteLoopDone
+  
+    StrCmp "$MUI_TEMP" "$SMPROGRAMS" secondStartMenuDeleteLoopDone secondStartMenuDeleteLoop
+  secondStartMenuDeleteLoopDone:
+  
+  ${If} ${RunningX64}
+    SetRegView 64
+  ${EndIf}
+  DeleteRegKey HKCU "$1\Software\@CPACK_PACKAGE_VENDOR@\H3DViewer @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@(x86)(dev)"
+  DeleteRegKey HKCU "$1\Software\@CPACK_PACKAGE_VENDOR@\H3DViewer @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@(x64)(dev)"
+  DeleteRegKey /ifempty HKCU "Software\@CPACK_PACKAGE_VENDOR@"
+  StrCpy $0 0
+  loop_remove_reg_key:
+    EnumRegKey $1 HKU "" $0
+    StrCmp $1 "" done_remove_reg_key
+    IntOp $0 $0 + 1
+    DeleteRegKey HKU "$1\Software\@CPACK_PACKAGE_VENDOR@\H3DViewer @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@(x86)(dev)"
+    DeleteRegKey HKU "$1\Software\@CPACK_PACKAGE_VENDOR@\H3DViewer @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@(x64)(dev)"
+    DeleteRegKey /ifempty HKU "$1\Software\@CPACK_PACKAGE_VENDOR@"
+    Goto loop_remove_reg_key
+  done_remove_reg_key:
+  ${If} ${RunningX64}
+    SetRegView 32
+  ${EndIf}
+
+  Push H3D_ROOT
+  Call un.DeleteEnvStr
+  
+  Push H3D_EXTERNAL_ROOT
+  Call un.DeleteEnvStr
+
+
+  Push $INSTDIR\$H3D_VERSION_TO_INSTALL
+  StrCmp $DO_NOT_ADD_TO_PATH "1" doNotRemoveFromPath 0
+    Call un.RemoveFromPath
+    Push $INSTDIR\External\$H3D_VERSION_TO_INSTALL
+    Call un.RemoveFromPath
+  doNotRemoveFromPath:
+  DeleteRegKey /ifempty SHCTX "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
+SectionEnd
+
+;--------------------------------
+; determine admin versus local install
+; Is install for "AllUsers" or "JustMe"?
+; Default to "JustMe" - set to "AllUsers" if admin or on Win9x
+; This function is used for the very first "custom page" of the installer.
+; This custom page does not show up visibly, but it executes prior to the
+; first visible page and sets up $INSTDIR properly...
+; Choose different default installation folder based on SV_ALLUSERS...
+; "Program Files" for AllUsers, "My Documents" for JustMe...
+
+!include LogicLib.nsh
+!include WinVer.nsh
+
+Function .onInit
+  ${IfNot} ${AtLeastWinVista}
+    MessageBox MB_YESNO|MB_ICONEXCLAMATION \
+    "Windows versions earlier than Vista is not fully supported. Using AnyDevice and EntactDevice nodes will not be possible. Continue with install?" \
+  IDYES instAnyways IDNO exitBecauseNotVistaOrLater
+exitBecauseNotVistaOrLater:
+    Quit
+  ${EndIf}
+
+instAnyways:
+  StrCmp "@CPACK_H3D_64_BIT@" "TRUE" 0 done_64_bit_checking
+    ${If} ${RunningX64}
+      DetailPrint "Installer running on 64-bit host"
+      ; disable registry redirection (enable access to 64-bit portion of registry)
+      ; This is needed in order to read correct registry information about python.
+      SetRegView 64
+    ${Else}
+      MessageBox MB_OK "32 bit Windows detected. This installer is for 64 bit Windows. Installer will exit."
+      Quit
+    ${EndIf}
+  done_64_bit_checking:
+  
+  StrCmp "@CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL@" "ON" 0 inst
+
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\@CPACK_PACKAGE_NAME@" "UninstallString"
+  StrCmp $0 "" inst
+
+  MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION \
+  "@CPACK_NSIS_PACKAGE_NAME@ is already installed. $\n$\nDo you want to uninstall the old version before installing the new one?" \
+  IDYES uninst IDNO inst
+  Abort
+
+;Run the uninstaller
+uninst:
+  ClearErrors
+  ExecWait '$0 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+
+  IfErrors uninst_failed inst
+uninst_failed:
+  MessageBox MB_OK|MB_ICONSTOP "Uninstall failed."
+  Abort
+
+
+inst:
+  ; Reads components status for registry
+  !insertmacro SectionList "InitSection"
+
+  ; check to see if /D has been used to change 
+  ; the install directory by comparing it to the 
+  ; install directory that is expected to be the
+  ; default
+  StrCpy $IS_DEFAULT_INSTALLDIR 0
+  StrCmp "$INSTDIR" "@CPACK_NSIS_INSTALL_ROOT@\@CPACK_PACKAGE_INSTALL_DIRECTORY@" 0 +2
+    StrCpy $IS_DEFAULT_INSTALLDIR 1
+  
+  StrCpy $SV_ALLUSERS "JustMe"
+  ; if default install dir then change the default
+  ; if it is installed for JustMe
+  StrCmp "$IS_DEFAULT_INSTALLDIR" "1" 0 +2
+    StrCpy $INSTDIR "$DOCUMENTS\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors noLM
+  Pop $0
+  UserInfo::GetAccountType
+  Pop $1
+  StrCmp $1 "Admin" 0 +4
+    SetShellVarContext all
+    ;MessageBox MB_OK 'User "$0" is in the Admin group'
+    StrCpy $SV_ALLUSERS "AllUsers"
+    Goto done
+  StrCmp $1 "Power" 0 +4
+    SetShellVarContext all
+    ;MessageBox MB_OK 'User "$0" is in the Power Users group'
+    StrCpy $SV_ALLUSERS "AllUsers"
+    Goto done
+    
+  noLM:
+    StrCpy $SV_ALLUSERS "AllUsers"
+    ;Get installation folder from registry if available
+
+  done:
+  StrCmp $SV_ALLUSERS "AllUsers" 0 +3
+    StrCmp "$IS_DEFAULT_INSTALLDIR" "1" 0 +2
+      StrCpy $INSTDIR "@CPACK_NSIS_INSTALL_ROOT@\@CPACK_PACKAGE_INSTALL_DIRECTORY@"
+
+  StrCpy $R4 "@CPACK_PACKAGE_VERSION_MAJOR@"
+  StrCpy $R5 "@CPACK_PACKAGE_VERSION_MINOR@"
+  StrCpy $R6 "@CPACK_PACKAGE_VERSION_PATCH@"
+  StrCpy $R7 "@CPACK_PACKAGE_NAME@"
+  
+  trypreviousversion:
+  ClearErrors
+  ReadRegStr $R0 SHCTX \
+  "Software\@CPACK_PACKAGE_VENDOR@\$R7 $R4.$R5.$R6" \
+  ""
+
+  IfErrors 0 alreadyinstalled
+    IntCmp $R6 0 +3 +3 0
+    IntOp $R6 $R6 - 1
+    Goto trypreviousversion
+    
+  IntCmp $R5 0 +4 +4 0
+    IntOp $R5 $R5 - 1
+    StrCpy $R6 "9"
+    Goto trypreviousversion
+  
+  IntCmp $R4 2 +5 +5 0
+    IntOp $R4 $R4 - 1
+    StrCpy $R5 "9"
+    StrCpy $R6 "9"
+    Goto trypreviousversion
+  
+  StrCmp "@CPACK_PACKAGE_NAME@" $R7 0 +6
+    StrCpy $R4 "@CPACK_PACKAGE_VERSION_MAJOR@"
+    StrCpy $R5 "@CPACK_PACKAGE_VERSION_MINOR@"
+    StrCpy $R6 "@CPACK_PACKAGE_VERSION_PATCH@"
+    StrCpy $R7 "H3DAPI"
+    Goto trypreviousversion
+
+  IfFileExists $INSTDIR 0 checkH3DROOT
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+    "It seems like another version of H3DAPI is already installed in the default \
+    location. If you install this version of H3DAPI make sure that you do not \
+    install into the same folder as any previous versions of H3DAPI. \
+    Note that you might also get conlicting paths in the PATH environment variable \
+    $\n$\nClick `OK` to continue installing or `Cancel` to cancel this installation." \
+    IDOK alreadyinstalledchecked
+    Abort
+
+  alreadyinstalled:
+  StrCpy $7 $R7
+  StrCpy $R7 "Software\Microsoft\Windows\CurrentVersion\Uninstall\$7 $R4.$R5.$R6"
+  StrCmp "$7 $R4.$R5.$R6" "H3DAPI 2.0.0" 0 +2
+    StrCpy $R7 "Software\Microsoft\Windows\CurrentVersion\Uninstall\H3D"
+  
+  ReadRegStr $R1 SHCTX \
+   "$R7" \
+   "UninstallString"
+  
+  StrLen $R8 $INSTDIR
+  
+  StrCpy $R9 $R7 $R8
+  
+  StrCpy $8 "in the default location"
+  StrCpy $9 " (recommended)"
+  StrCmp $R9 $INSTDIR 0 +3
+    StrCpy $8 "somewhere on the system"
+    StrCpy $9 ""
+
+  MessageBox MB_YESNOCANCEL|MB_ICONQUESTION \
+  "Version $R4.$R5.$R6 of H3DAPI is already installed $8, \
+  do you wish to \
+  uninstall the previous installation$9? \
+  $\n$\nClick `Yes` to uninstall previous installation. `NO´ to continue \
+  installation without any changes or `Cancel` to cancel this installation." \
+  IDYES uninstallprevious IDNO alreadyinstalledchecked
+  Abort
+
+  uninstallprevious:
+  StrCmp $R1 "" alreadyinstalledchecked
+
+  ReadRegStr $R2 SHCTX \
+  "Software\@CPACK_PACKAGE_VENDOR@\$7 $R4.$R5.$R6" \
+  ""
+
+  StrCpy $R3 $INSTDIR
+  StrCpy $INSTDIR $R2
+  ExecWait '$R1 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+  IfErrors no_remove_uninstaller uninstallsucceeded
+
+  no_remove_uninstaller:
+  MessageBox MB_OK|MB_ICONINFORMATION "Uninstall not completed, setup will exit."
+  Abort
+
+  checkH3DROOT:
+  ReadEnvStr $R0 H3D_ROOT
+  IfErrors alreadyinstalledchecked 0
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+    "It seems like another version of H3DAPI is already installed. \
+    If you install this version of H3DAPI the \
+    H3D specific environment variables will be changed to point to the new \
+    installation. If you install this version make sure that you do not install \
+    into the same folder as any previous versions of H3DAPI. \
+    Note that you might also get conlicting paths in the PATH environment variable \
+    $\n$\nClick `OK` to continue installing or `Cancel` to cancel this installation." \
+    IDOK alreadyinstalledchecked
+    Abort
+
+  uninstallsucceeded:
+    ; Wait a bit for system to release files and folders.
+    Sleep 1000
+    Delete $R1
+    RMDir $INSTDIR
+    StrCpy $INSTDIR $R3
+
+  alreadyinstalledchecked:
+
+  StrCmp "@CPACK_NSIS_MODIFY_PATH@" "ON" 0 noOptionsPage
+    ${If} ${RunningX64}
+      !insertmacro INSTALLOPTIONS_EXTRACT_AS "@CPACK_NSIS_INSTALLOPTIONS_64@" "NSIS.InstallOptions.ini"
+    ${Else}
+      !insertmacro MUI_INSTALLOPTIONS_EXTRACT "NSIS.InstallOptions.ini"
+    ${EndIf}
+
+  noOptionsPage:
+FunctionEnd

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<X3D profile='Full' version='3.2'>
+  <head>
+    <meta name='title' content='ComposedCubeMapTexture.x3d'/>
+    <meta name='description' content='X3D ComposedCubeMapTexture example'/>
+    <meta name='author' content='SenseGraphics AB, 2006-2014'/>
+  </head>
+  
+  <Scene>
+    <Viewpoint position='0 0 0.6' />
+    <NavigationInfo type="NONE" />
+    <Background
+       backUrl  ='../textures/b_arch_00000.png'
+       frontUrl ='../textures/f_arch_00000.png'
+       leftUrl  ='../textures/l_arch_00000.png'
+       rightUrl ='../textures/r_arch_00000.png'
+       bottomUrl='../textures/d_arch_00000.png'
+       topUrl   ='../textures/t_arch_00000.png'   />
+
+    <Shape>
+      <Appearance>
+        <Material />
+        <ComposedCubeMapTexture>
+          <ImageTexture url="../textures/b_arch_00000rot.png"
+                        containerField="back"/>
+          <ImageTexture url="../textures/f_arch_00000rot.png"
+                        containerField="front"/>
+          <ImageTexture url="../textures/l_arch_00000rot.png"
+                        containerField="left"/>
+          <ImageTexture url="../textures/r_arch_00000rot.png"
+                        containerField="right"/>
+          <ImageTexture url="../textures/t_arch_00000.png"
+                        containerField="top"/>
+          <ImageTexture url="../textures/d_arch_00000.png"
+                        containerField="bottom"/>
+        </ComposedCubeMapTexture>
+      </Appearance>
+      <IndexedFaceSet
+          coordIndex='0 1 2 3 -1 4 0 3 7 -1 5 4 7 6 -1
+                      1 5 6 2 -1 1 0 4 5 -1 3 2 6 7'>
+        <Coordinate
+            point=' 0.1  0.1  0.1, -0.1  0.1  0.1,
+                   -0.1 -0.1  0.1,  0.1 -0.1  0.1,
+                   0.1  0.1 -0.1, -0.1  0.1 -0.1,
+                   -0.1 -0.1 -0.1,  0.1 -0.1 -0.1' />
+        <TextureCoordinateGenerator mode="CAMERASPACEREFLECTIONVECTOR" />
+      </IndexedFaceSet>
+    </Shape>
+  </Scene>
+</X3D>
