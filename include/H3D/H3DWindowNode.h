@@ -36,9 +36,11 @@
 #include <H3D/DefaultAppearance.h>
 #include <H3D/NavigationInfo.h>
 #include <H3D/FrameBufferTextureGenerator.h>
+#include <H3D/OVRManager.h>
 
 
 namespace H3D {
+  using virtualreality::OVRManager;
   class H3DNavigation;
 
   /// \ingroup X3DNodes

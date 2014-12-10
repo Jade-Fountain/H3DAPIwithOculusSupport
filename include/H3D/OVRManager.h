@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 //	  Author: Jake Fountain 2014
 //    This file is part of H3D API Oculus rift extension.
+// 	  The code for this file has been created based on the code exhibited in the OVR Developer Documentation v0.4.4
 //
 //    H3D API is free software; you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -35,11 +36,18 @@ namespace virtualreality {
 
 	class OVRManager {
 	public:
-		bool initialise();
+		void initialise();
 		void destroy();
 		
 	private:
-		OVR::ovrHmd hmd;
+		ovrHmd hmd;
+
+		bool ovrHMDPresent;
+
+
+		ovrPoseStatef getPoseOfHMD();
+
+		bool checkHealthWarningState();
 	};
 
 }
