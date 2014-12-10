@@ -37,6 +37,7 @@
 #include <H3D/NavigationInfo.h>
 #include <H3D/FrameBufferTextureGenerator.h>
 
+
 namespace H3D {
   class H3DNavigation;
 
@@ -126,7 +127,10 @@ namespace H3D {
         /// copy OpenGL buffer and display with DirectX. Executable must be
         /// named to one of the NVidia sanctioned 3D programs in order to work,
         /// e.g. googleearth.exe.
-        NVIDIA_3DVISION
+        NVIDIA_3DVISION,
+
+		//Oculus SDK 0.4.4 compatible with DK2 and DK1
+		OCULUS_RIFT
 
       } Mode;
 

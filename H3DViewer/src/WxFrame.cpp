@@ -331,6 +331,10 @@ WxFrame::WxFrame( wxWindow *_parent, wxWindowID _id,
                                     wxT("Horizontal Split with aspect ratio kept the same."));
   stereoRenderMode->AppendRadioItem(FRAME_VERTSPLIT, wxT("Vertical Split"),
                                     wxT("Vertical Split"));
+
+  stereoRenderMode->AppendRadioItem(FRAME_VERTSPLIT, wxT("Oculus Rift"),
+                                    wxT("Stereo with warping and head tracking for the Oculus Rift"));
+  
   stereoRenderMode->AppendRadioItem(FRAME_VERTSPLITKEEPASPECT,
                                     wxT("Vertical Split Keep Aspect"),
                                     wxT("Vertical Split with aspect ratio kept the same."));

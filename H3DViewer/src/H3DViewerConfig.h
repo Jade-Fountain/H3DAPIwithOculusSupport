@@ -53,6 +53,6 @@
 
 /// This will be defined if DirectX 9 SDK is installed. Enables the NVidia 
 /// 3DVision stereo mode.
-/* #undef HAVE_DX9 */
+#define HAVE_DX9
 
 #endif

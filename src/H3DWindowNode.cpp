@@ -63,7 +63,7 @@
 #include <H3DUtil/H3DTimer.h>
 #include <H3DUtil/LoadImageFunctions.h>
 
-
+//#include <OVR.h>
 using namespace H3D;
 
 
@@ -178,6 +178,7 @@ H3DWindowNode::H3DWindowNode(
   renderMode->addValidValue( "HDMI_FRAME_PACKED_720P" );
   renderMode->addValidValue( "HDMI_FRAME_PACKED_1080P" );
   renderMode->addValidValue( "NVIDIA_3DVISION" );
+  renderMode->addValidValue( "OCULUS_RIFT" );
   renderMode->setValue( "MONO" );  
 
   cursorType->addValidValue( "DEFAULT" );
@@ -240,6 +241,7 @@ void H3DWindowNode::shareRenderingContext( H3DWindowNode *w ) {
 void H3DWindowNode::initialize() {
   initWindowHandler();
   initWindowWithContext();
+
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
@@ -1501,7 +1503,9 @@ H3DWindowNode::RenderMode::Mode H3DWindowNode::RenderMode::getRenderMode() {
   else if( value == "HDMI_FRAME_PACKED_1080P" )
     return HDMI_FRAME_PACKED_1080P;
   else if( value == "NVIDIA_3DVISION" )
-    return NVIDIA_3DVISION;
+    return NVIDIA_3DVISION; 
+  else if( value == "OCULUS_RIFT" )
+    return OCULUS_RIFT;
   else {
     stringstream s;
     s << "Must be one of "
@@ -1516,6 +1520,7 @@ H3DWindowNode::RenderMode::Mode H3DWindowNode::RenderMode::getRenderMode() {
       << "HORIZONTAL_SPLIT, "
       << "HORIZONTAL_SPLIT_KEEP_RATIO, "
       << "NVIDIA_3DVISION, "
+      << "OCULUS_RIFT, "
       << "HDMI_FRAME_PACKED_720P, "
       << "HDMI_FRAME_PACKED_1080P, "
       << "RED_CYAN_STEREO, RED_GREEN_STEREO or RED_BLUE_STEREO. ";

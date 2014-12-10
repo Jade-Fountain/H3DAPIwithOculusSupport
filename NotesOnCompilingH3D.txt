@@ -1,0 +1,7 @@
+NotesOnCompilingH3D
+
+-Generate with Cmake GUI using VS 2010, NOT 2012
+
+-Add d3d9.lib and d3dx9.lib explicitly to the H3DViewer project
+
+-After build, the viewer is in H3D\build\project\H3DAPI\H3DViewer\Release
