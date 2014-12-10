@@ -241,6 +241,8 @@ namespace H3D {
 
   D3D9Canvas *d3d_canvas;
 
+  OVRManager ovrManager;
+
 #endif
 
   private:
