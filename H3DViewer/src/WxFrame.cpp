@@ -332,7 +332,7 @@ WxFrame::WxFrame( wxWindow *_parent, wxWindowID _id,
   stereoRenderMode->AppendRadioItem(FRAME_VERTSPLIT, wxT("Vertical Split"),
                                     wxT("Vertical Split"));
 
-  stereoRenderMode->AppendRadioItem(FRAME_VERTSPLIT, wxT("Oculus Rift"),
+  stereoRenderMode->AppendRadioItem(FRAME_OCULUSRIFT, wxT("Oculus Rift"),
                                     wxT("Stereo with warping and head tracking for the Oculus Rift"));
   
   stereoRenderMode->AppendRadioItem(FRAME_VERTSPLITKEEPASPECT,
@@ -578,6 +578,7 @@ void WxFrame::UpdateStereoModeMenu::update() {
       frame->stereoRenderMode->Enable( FRAME_HORZSPLIT, false );
       frame->stereoRenderMode->Enable( FRAME_HORZSPLITKEEPASPECT, false );
       frame->stereoRenderMode->Enable( FRAME_VERTSPLIT, false );
+      frame->stereoRenderMode->Enable( FRAME_OCULUSRIFT, false );
       frame->stereoRenderMode->Enable( FRAME_VERTSPLITKEEPASPECT, false );
       frame->stereoRenderMode->Enable( FRAME_HORZINTERLACED, false );
       frame->stereoRenderMode->Enable( FRAME_VERTINTERLACED, false );
@@ -598,6 +599,8 @@ void WxFrame::UpdateStereoModeMenu::update() {
     frame->stereoRenderMode->Check( FRAME_HORZSPLITKEEPASPECT, true );
   else if( stereo_mode == "VERTICAL_SPLIT" )
     frame->stereoRenderMode->Check( FRAME_VERTSPLIT, true );
+  else if( stereo_mode == "OCULUS_RIFT" )
+    frame->stereoRenderMode->Check( FRAME_OCULUSRIFT, true );
   else if( stereo_mode == "VERTICAL_SPLIT_KEEP_RATIO" )
     frame->stereoRenderMode->Check( FRAME_VERTSPLITKEEPASPECT, true );
   else if( stereo_mode == "HORIZONTAL_INTERLACED" )
@@ -1799,6 +1802,9 @@ void WxFrame::StereoRenderMode(wxCommandEvent & event)
       break;
     case FRAME_VERTSPLIT:
       renderMode = "VERTICAL_SPLIT";
+      break;
+    case FRAME_OCULUSRIFT:
+      renderMode = "OCULUS_RIFT";
       break;
     case FRAME_VERTSPLITKEEPASPECT:
       renderMode = "VERTICAL_SPLIT_KEEP_RATIO";
