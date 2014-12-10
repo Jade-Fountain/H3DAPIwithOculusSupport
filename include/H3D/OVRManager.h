@@ -31,6 +31,7 @@
 #define VIRTUALREALITY_OVRManager_H
 
 #include "OVR.h"
+#include "H3D/StereoInfo.h"
 
 namespace virtualreality {
 
@@ -39,15 +40,20 @@ namespace virtualreality {
 		void initialise();
 		void destroy();
 		
+		bool ovrHMDPresent;
+
+		ovrEyeRenderDesc EyeRenderDesc;
+
+    	//Get IPD, FOV, pose, etc
+		bool getHMDInfo(H3D::StereoInfo* info);
+
+		bool checkHealthWarningState();
+
+		void configureRenderSettings();
 	private:
 		ovrHmd hmd;
 
-		bool ovrHMDPresent;
-
-
 		ovrPoseStatef getPoseOfHMD();
-
-		bool checkHealthWarningState();
 	};
 
 }

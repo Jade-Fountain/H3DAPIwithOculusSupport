@@ -770,7 +770,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     vp_ref.reset( static_cast<Viewpoint *>(vp) );
   }
 
-//OCULUS: head tracking hook?
+  //OCULUS: head tracking hook?
   //Moving the viewpoint with the rift should work
   X3DViewpointNode *navigation_vp = vp;
   vp = h3d_navigation->viewpointToUse( vp );
@@ -858,9 +858,15 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
   H3DFloat focal_distance = 0.6f;
 
-  StereoInfo *stereo_info = StereoInfo::getActive();
-  if( stereo_info ) {
-    focal_distance = stereo_info->focalDistance->getValue();
+  StereoInfo *stereo_info;
+  if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
+    //Get IPD, FOV, pose, etc
+    ovrManager->getHMDInfo(stereo_info);
+  } else {
+    stereo_info = StereoInfo::getActive();
+      if( stereo_info ) {
+        focal_distance = stereo_info->focalDistance->getValue();
+      }
   }
 
   bool mirror_in_y = mirrored->getValue();

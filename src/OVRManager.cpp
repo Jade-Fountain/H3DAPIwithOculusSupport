@@ -29,10 +29,15 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <H3D/OVRManager.h>
+#include "H3DUtil/Quaternion.h"
+#include "H3DUtil/Rotation.h"
 #include <iostream>
 
  
 namespace virtualreality {
+	using OVR::Sizei;
+	using H3DUtil::ArithmeticTypes::Quaternion;
+	using H3DUtil::ArithmeticTypes::Rotation;
 
 	void OVRManager::initialise(){
 
@@ -98,6 +103,44 @@ namespace virtualreality {
 			return true;
 		}
 		return false;
+	}
+
+	void OVRManager::configureRenderSettings(){
+		// Configure OpenGL.
+		// ovrGLConfig cfg;
+		// cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
+		// cfg.OGL.Header.BackBufferSize = Sizei(hmd->Resolution.w, hmd->Resolution.h);
+		// cfg.OGL.Header.Multisample = backBufferMultisample;
+		// cfg.OGL.Window = window;
+		// cfg.OGL.DC = dc;
+		// ovrBool result = ovrHmd_ConfigureRendering(hmd, &cfg.Config, distortionCaps, eyesFov, EyeRenderDesc);
+
+
+		// Configure Stereo settings.
+		// Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
+		// Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
+		
+		// Sizei renderTargetSize;
+		// renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
+		// renderTargetSize.h = std::max ( recommenedTex0Size.h, recommenedTex1Size.h );
+
+		// const int eyeRenderMultisample = 1;
+		//pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
+		// The actual RT size may be different due to HW limits.
+		//renderTargetSize.w = pRendertargetTexture->GetWidth();
+		//renderTargetSize.h = pRendertargetTexture->GetHeight();
+	}
+
+	bool OVRManager::getHMDInfo(H3D::StereoInfo* info){
+		// info->interocularDistance->setValue(2 * std::fabs(ovrEyeRenderDesc::HmdToEyeViewOffset[0]));
+		//TODO load in correct IPD as above
+		info->interocularDistance->setValue(0.062); 
+		info->focalDistance->setValue(99999999999999);
+		ovrQuatf orientation = getPoseOfHMD().ThePose.Orientation;
+
+		Quaternion q = Quaternion(orientation.x,orientation.y,orientation.z,orientation.w);
+
+		info->headTilt->setValue(Rotation(q));
 	}
 
 }
