@@ -180,11 +180,12 @@ H3DWindowNode::H3DWindowNode(
   renderMode->addValidValue( "HDMI_FRAME_PACKED_720P" );
   renderMode->addValidValue( "HDMI_FRAME_PACKED_1080P" );
   renderMode->addValidValue( "NVIDIA_3DVISION" );
+  //What does this do? It is segfaulting!
   //renderMode->addValidValue( "OCULUS_RIFT" );
-  renderMode->setValue( "MONO" );  
+  renderMode->setValue( "MONO" );
 
   cursorType->addValidValue( "DEFAULT" );
-  cursorType->setValue( "DEFAULT" ); 
+  cursorType->setValue( "DEFAULT" );
 
   useFullscreenAntiAliasing->setValue( true );
   manualCursorControl->setValue( false );
@@ -869,7 +870,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   }
 
 
-
   bool mirror_in_y = mirrored->getValue();
     
   if( mirror_in_y != last_loop_mirrored ) 
@@ -937,12 +937,15 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     // X3DViewpointNode.
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
-    vp->setupProjection( eye_mode,
-                         projection_width,
-                         projection_height,
-                         clip_near, clip_far,
-                         stereo_info );
-    
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+      ovrManager->setProjectionMatrix(eye_mode);
+    } else {
+      vp->setupProjection( eye_mode,
+                           projection_width,
+                           projection_height,
+                           clip_near, clip_far,
+                           stereo_info );
+    }
     glDrawBuffer(GL_BACK_LEFT);
     
     if( stereo_mode == RenderMode::RED_BLUE_STEREO ||
@@ -984,9 +987,11 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else  if( stereo_mode == RenderMode::HDMI_FRAME_PACKED_1080P ) {
       glViewport( 0, 1125, 1920, 1080 );
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
-               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ) {
+               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO
+               stereo_mode == RenderMode::OCULUS_RIFT ) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-    } 
+      ovrManager->bindTexture(eye_mode);
+    }
     // clear the buffers before rendering
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -1008,9 +1013,13 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
     // add viewmatrix to model view matrix.
 
-    //Oculus: IPD used here:    
-    vp->setupViewMatrix( eye_mode,
-                         stereo_info );
+    //Oculus: IPD used here:
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+      ovrManager->setViewMatrix(eye_mode);
+    } else {
+      vp->setupViewMatrix( eye_mode,
+                           stereo_info );
+    }
 
     if( ti ) {
       for( TraverseInfo::LightVector::const_iterator i = 
@@ -1052,12 +1061,15 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glFrontFace( GL_CCW );
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
-    vp->setupProjection( eye_mode,
-                         projection_width,
-                         projection_height,
-                         clip_near, clip_far,
-                         stereo_info );
-
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+      ovrManager->setProjectionMatrix(eye_mode);
+    } else {
+      vp->setupProjection( eye_mode,
+                           projection_width,
+                           projection_height,
+                           clip_near, clip_far,
+                           stereo_info );
+    }
     if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
@@ -1115,8 +1127,13 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
 
     // add viewmatrix to model view matrix.
-    vp->setupViewMatrix( X3DViewpointNode::RIGHT_EYE,
-                         stereo_info );
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+      ovrManager->setViewMatrix(eye_mode);
+    } else {
+      vp->setupViewMatrix( eye_mode,
+                           stereo_info );
+    }
+
     
     if( ti ) {
       for( TraverseInfo::LightVector::const_iterator i = 

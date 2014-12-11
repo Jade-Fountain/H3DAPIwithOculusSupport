@@ -32,12 +32,13 @@
 
 #include "OVR.h"
 #include "H3D/StereoInfo.h"
+#include "H3D/X3DViewpointNode.h"
 
 namespace virtualreality {
 
 	class OVRManager {
 	public:
-		OVRManager(){}
+		OVRManager(): ovrHMDPresent(false) {}
 		void initialise();
 		void destroy();
 		
@@ -51,10 +52,15 @@ namespace virtualreality {
 		bool checkHealthWarningState();
 
 		void configureRenderSettings();
+
+		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
+		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 	private:
 		ovrHmd hmd;
 
 		ovrPoseStatef getPoseOfHMD();
+
+		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
 	};
 
 }

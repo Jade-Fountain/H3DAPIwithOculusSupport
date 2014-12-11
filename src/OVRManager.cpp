@@ -144,4 +144,26 @@ namespace virtualreality {
 
 	}
 
+	void OVRManager::setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode){
+		//TODO: customize eye render order
+		ovrEyeType eye = H3DEyeModeToOVREyeMode(eye_mode);
+		ovrMatrix4f proj = ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, 0.01f, 10000.0f, true);
+		// * Test code *
+		// Assign quaternion result directly to view (translation is ignored).
+		//pRender->SetProjection(proj);
+	}
+
+	void OVRManager::setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode){
+		ovrEyeType eye = H3DEyeModeToOVREyeMode(eye_mode);
+		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
+		ovrQuatf orientation = ovrQuatf(headPose[eye].Orientation);
+		ovrMatrix4f view = ovrMatrix4f(orientation.Inverted()) * ovrMatrix4f::Translation(-WorldEyePos);
+		
+	}
+
+	ovrEyeType OVRManager::H3DEyeModeToOVREyeMode(H3D::X3DViewpointNode::EyeMode eye_mode){
+		
+	}
+
+
 }
