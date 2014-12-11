@@ -37,6 +37,7 @@ namespace virtualreality {
 
 	class OVRManager {
 	public:
+		OVRManager(){}
 		void initialise();
 		void destroy();
 		
@@ -45,7 +46,7 @@ namespace virtualreality {
 		ovrEyeRenderDesc EyeRenderDesc;
 
     	//Get IPD, FOV, pose, etc
-		bool getHMDInfo(H3D::StereoInfo* info);
+		void getHMDInfo(H3D::StereoInfo* info);
 
 		bool checkHealthWarningState();
 

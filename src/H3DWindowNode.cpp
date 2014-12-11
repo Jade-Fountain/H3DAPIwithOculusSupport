@@ -65,6 +65,7 @@
 
 //#include <OVR.h>
 using namespace H3D;
+using virtualreality::OVRManager;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -139,7 +140,9 @@ H3DWindowNode::H3DWindowNode(
   current_cursor( "DEFAULT" ),
   h3d_navigation( new H3DNavigation ),
   window_is_made_active( false ),
-  check_if_stereo_obtained( false ) {
+  check_if_stereo_obtained( false )
+  // ovrManager( new OVRManager ) 
+  {
 
   type_name = "H3DWindowNode";
   database.initFields( this );
@@ -178,7 +181,7 @@ H3DWindowNode::H3DWindowNode(
   renderMode->addValidValue( "HDMI_FRAME_PACKED_720P" );
   renderMode->addValidValue( "HDMI_FRAME_PACKED_1080P" );
   renderMode->addValidValue( "NVIDIA_3DVISION" );
-  renderMode->addValidValue( "OCULUS_RIFT" );
+  //renderMode->addValidValue( "OCULUS_RIFT" );
   renderMode->setValue( "MONO" );  
 
   cursorType->addValidValue( "DEFAULT" );
@@ -241,7 +244,7 @@ void H3DWindowNode::shareRenderingContext( H3DWindowNode *w ) {
 void H3DWindowNode::initialize() {
   initWindowHandler();
   initWindowWithContext();
-
+  
   ovrManager->initialise();
 
   if( !GLEW_init ) {
@@ -858,15 +861,14 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
   H3DFloat focal_distance = 0.6f;
 
-  StereoInfo *stereo_info;
-  if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
-    //Get IPD, FOV, pose, etc
-    ovrManager->getHMDInfo(stereo_info);
-  } else {
-    stereo_info = StereoInfo::getActive();
-      if( stereo_info ) {
-        focal_distance = stereo_info->focalDistance->getValue();
-      }
+  StereoInfo* stereo_info = StereoInfo::getActive();
+  // if (stereo_info && ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
+  //   //Get IPD, FOV, pose, etc
+  //   ovrManager->getHMDInfo(stereo_info);
+  // }
+
+  if( stereo_info ) {
+    focal_distance = stereo_info->focalDistance->getValue();
   }
 
   bool mirror_in_y = mirrored->getValue();
