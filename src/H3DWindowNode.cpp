@@ -139,7 +139,8 @@ H3DWindowNode::H3DWindowNode(
   current_cursor( "DEFAULT" ),
   h3d_navigation( new H3DNavigation ),
   window_is_made_active( false ),
-  check_if_stereo_obtained( false ) {
+  check_if_stereo_obtained( false ),
+  ovrManager( new OVRManager() ){
 
   type_name = "H3DWindowNode";
   database.initFields( this );
@@ -858,16 +859,15 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
   H3DFloat focal_distance = 0.6f;
 
-  StereoInfo *stereo_info;
-  if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
-    //Get IPD, FOV, pose, etc
-    ovrManager->getHMDInfo(stereo_info);
-  } else {
-    stereo_info = StereoInfo::getActive();
-      if( stereo_info ) {
-        focal_distance = stereo_info->focalDistance->getValue();
-      }
+  StereoInfo *stereo_info = StereoInfo::getActive();
+  if( stereo_info ) {
+    if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
+      //Get IPD, FOV, pose, etc
+      ovrManager->getHMDInfo(stereo_info);
+    }
+    focal_distance = stereo_info->focalDistance->getValue();
   }
+
 
   bool mirror_in_y = mirrored->getValue();
     

@@ -131,7 +131,7 @@ namespace virtualreality {
 		//renderTargetSize.h = pRendertargetTexture->GetHeight();
 	}
 
-	bool OVRManager::getHMDInfo(H3D::StereoInfo* info){
+	void OVRManager::getHMDInfo(H3D::StereoInfo* info){
 		// info->interocularDistance->setValue(2 * std::fabs(ovrEyeRenderDesc::HmdToEyeViewOffset[0]));
 		//TODO load in correct IPD as above
 		info->interocularDistance->setValue(0.062); 
