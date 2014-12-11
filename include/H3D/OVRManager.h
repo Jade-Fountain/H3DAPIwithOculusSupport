@@ -37,6 +37,7 @@ namespace virtualreality {
 
 	class OVRManager {
 	public:
+		OVRManager(){}
 		void initialise();
 		void destroy();
 		

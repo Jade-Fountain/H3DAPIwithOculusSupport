@@ -141,6 +141,7 @@ namespace virtualreality {
 		Quaternion q = Quaternion(orientation.x,orientation.y,orientation.z,orientation.w);
 
 		info->headTilt->setValue(Rotation(q));
+
 	}
 
 }

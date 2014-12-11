@@ -65,6 +65,7 @@
 
 //#include <OVR.h>
 using namespace H3D;
+//using virtualreality::OVRManager;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -179,7 +180,7 @@ H3DWindowNode::H3DWindowNode(
   renderMode->addValidValue( "HDMI_FRAME_PACKED_720P" );
   renderMode->addValidValue( "HDMI_FRAME_PACKED_1080P" );
   renderMode->addValidValue( "NVIDIA_3DVISION" );
-  renderMode->addValidValue( "OCULUS_RIFT" );
+  //renderMode->addValidValue( "OCULUS_RIFT" );
   renderMode->setValue( "MONO" );  
 
   cursorType->addValidValue( "DEFAULT" );
@@ -242,8 +243,8 @@ void H3DWindowNode::shareRenderingContext( H3DWindowNode *w ) {
 void H3DWindowNode::initialize() {
   initWindowHandler();
   initWindowWithContext();
-
-  ovrManager->initialise();
+  
+  // ovrManager->initialise();
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
@@ -865,8 +866,8 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       //Get IPD, FOV, pose, etc
       ovrManager->getHMDInfo(stereo_info);
     }
-    focal_distance = stereo_info->focalDistance->getValue();
   }
+
 
 
   bool mirror_in_y = mirrored->getValue();
