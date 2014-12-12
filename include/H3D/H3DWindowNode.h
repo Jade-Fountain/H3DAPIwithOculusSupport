@@ -42,6 +42,7 @@
 namespace H3D {
 
   class H3DNavigation;
+  class OVRManager; //Forward declaration to appease code gods.
 
   /// \ingroup X3DNodes
   /// \class H3DWindowNode
@@ -336,8 +337,8 @@ namespace H3D {
     auto_ptr< SFViewpoint > viewpoint;
 
     ///Manage oculus hardware, headtracking and stereo rendering
-	auto_ptr< OVRManager > ovrManager;
-
+	auto_ptr< H3D::OVRManager > ovrManager;
+	
     /// If set to true changes of cursor is totally up to the user of
     /// the window by changing the cursorType. If false, H3D API will 
     /// control which cursor to show, changing cursor when e.g. a

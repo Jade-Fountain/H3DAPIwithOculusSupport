@@ -65,7 +65,6 @@
 
 //#include <OVR.h>
 using namespace H3D;
-//using OVR::OVRManager;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -245,7 +244,7 @@ void H3DWindowNode::initialize() {
   initWindowHandler();
   initWindowWithContext();
   
-  // ovrManager->initialise();
+  ovrManager->initialise();
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;

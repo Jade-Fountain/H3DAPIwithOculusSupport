@@ -27,8 +27,8 @@
 //
 //
 //////////////////////////////////////////////////////////////////////////////
-#ifndef VIRTUALREALITY_OVRManager_H
-#define VIRTUALREALITY_OVRManager_H
+#ifndef H3D_OVRManager_H
+#define H3D_OVRManager_H
 
 #include "OVR.h"
 #include "H3D/StereoInfo.h"
