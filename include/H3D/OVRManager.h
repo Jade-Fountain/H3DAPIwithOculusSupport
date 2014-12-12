@@ -55,16 +55,18 @@ namespace H3D {
 		void configureRenderSettings(HWND window, HDC hdc);
 
 		void createRenderTexture(int width, int height, int samples);
+		
+		void startFrame();
+		
+		void endFrame();
 
 		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 
+		void drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode);
+
 		std::string getConsoletext();
-		
-		void startFrame();
-		
-		void endFrame();
 
 	private:		
 
@@ -74,7 +76,11 @@ namespace H3D {
 
 		ovrEyeRenderDesc EyeRenderDesc[2];
 		ovrPosef headPoses[2];
-		ovrTexture eyeTextures[2];
+		ovrGLTexture eyeTextures[2];
+		ovrEyeViewport eyeViewports[2];
+		OVR::Sizei renderTargetSize;
+
+		GLuint oculusRiftTextureID;
 
 		ovrPoseStatef getPoseOfHMD();
 

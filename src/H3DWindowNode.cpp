@@ -952,7 +952,11 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            clip_near, clip_far,
                            stereo_info );
     }
-    glDrawBuffer(GL_BACK_LEFT);
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
+      ovrManager->drawBuffer(eye_mode);
+    } else {
+      glDrawBuffer(GL_BACK_LEFT);
+    }
     
     if( stereo_mode == RenderMode::RED_BLUE_STEREO ||
         stereo_mode == RenderMode::RED_GREEN_STEREO ||
@@ -1076,7 +1080,11 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            clip_near, clip_far,
                            stereo_info );
     }
-    if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
+    
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
+      ovrManager->drawBuffer(eye_mode);
+      glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
+    } else if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
       glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );

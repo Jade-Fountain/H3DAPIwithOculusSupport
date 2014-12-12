@@ -115,7 +115,6 @@ namespace H3D {
 		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
 		OVR::Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
 		
-		OVR::Sizei renderTargetSize;
 		renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
 		renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 
@@ -141,8 +140,26 @@ namespace H3D {
 	}
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
-		//TODO
+		glGenTextures(1, &oculusRiftTextureID);
+   		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID);
+   		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID, 0);
 
+		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
+		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h);
+		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i((renderTargetSize.w + 1) / 2, 0);
+		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
+
+		eyeTextures[ovrEye_Left].OGL.Header.API = ovrRenderAPI_OpenGL;
+		eyeTextures[ovrEye_Left].OGL.Header.RenderViewport = eyeViewports[ovrEye_Left];
+		eyeTextures[ovrEye_Left].OGL.Header.TextureSize = renderTargetSize;
+		eyeTextures[ovrEye_Left].OGL.TexId = oculusRiftTextureID;
+		eyeTextures[ovrEye_Left].Texture.Header.API = ovrRenderAPI_OpenGL;
+		eyeTextures[ovrEye_Left].Texture.Header.RenderViewport = eyeViewports[ovrEye_Left];
+		eyeTextures[ovrEye_Left].Texture.Header.TextureSize = renderTargetSize;
+
+		eyeTextures[ovrEye_Right] = eyeTextures[ovrEye_Left];
+		eyeTextures[ovrEye_Right].OGL.Header.RenderViewport = eyeViewports[ovrEye_Right];
+		eyeTextures[ovrEye_Right].Texture.Header.RenderViewport = eyeViewports[ovrEye_Right];
 	}
 
 	void OVRManager::getHMDInfo(H3D::StereoInfo* info){
@@ -182,6 +199,16 @@ namespace H3D {
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z);
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
 	}
+
+	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
+		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+		if(eye == ovrEye_Left){
+			glNamedFramebufferDrawBuffer(oculusRiftTextureID, GL_LEFT);
+		} else {
+			glNamedFramebufferDrawBuffer(oculusRiftTextureID, GL_RIGHT);
+		}
+	}
+
 
 	ovrEyeType OVRManager::H3DEyeModeToOVREyeType(X3DViewpointNode::EyeMode eye_mode){
 		if (eye_mode == X3DViewpointNode::EyeMode::MONO || eye_mode == X3DViewpointNode::EyeMode::LEFT_EYE){
