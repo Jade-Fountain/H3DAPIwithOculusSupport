@@ -246,6 +246,7 @@ void H3DWindowNode::initialize() {
   initWindowWithContext();
   
   ovrManager->initialise();
+  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
@@ -868,7 +869,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       ovrManager->getHMDInfo(stereo_info);
     }
   }
-  Console(4) << ovrManager->getConsoletext();
+  Console(4) << ovrManager->getConsoletext() << std::endl;
 
 
   bool mirror_in_y = mirrored->getValue();

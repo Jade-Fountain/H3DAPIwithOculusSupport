@@ -31,9 +31,9 @@
 #define H3D_OVRManager_H
 
 #include "OVR.h"
+
 #include "H3D/StereoInfo.h"
 #include "H3D/X3DViewpointNode.h"
-#include "H3D\H3DWindowNode.h"
 #include <GL/glew.h>
 
 namespace H3D {
@@ -54,7 +54,9 @@ namespace H3D {
 
 		bool checkHealthWarningState();
 
-		void configureRenderSettings();
+		void configureRenderSettings(HWND window, HDC hdc);
+
+		void createRenderTexture(int width, int height, int samples);
 
 		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 

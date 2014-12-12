@@ -42,7 +42,6 @@
 namespace H3D {
 
   class H3DNavigation;
-  class OVRManager; //Forward declaration to appease code gods.
 
   /// \ingroup X3DNodes
   /// \class H3DWindowNode
