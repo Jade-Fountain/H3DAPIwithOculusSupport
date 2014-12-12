@@ -70,7 +70,10 @@ namespace H3D {
 
 		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
 		
+		//Utilities
 		GLfloat* getColumnMajorRepresentation(OVR::Matrix4f m);
+
+		std::string getString(OVR::Matrix4f m);
 	};
 
 }

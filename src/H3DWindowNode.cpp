@@ -211,6 +211,7 @@ H3DWindowNode::H3DWindowNode(
 }
 
 H3DWindowNode::~H3DWindowNode() {
+  ovrManager->destroy();
   delete h3d_navigation;
   h3d_navigation = NULL;
   if( stencil_mask )
@@ -867,7 +868,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       ovrManager->getHMDInfo(stereo_info);
     }
   }
-  Console(4) << ovrManager->getConsoletext() <<std::endl;
+  Console(4) << ovrManager->getConsoletext();
 
 
   bool mirror_in_y = mirrored->getValue();

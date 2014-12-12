@@ -47,6 +47,7 @@ namespace H3D {
 
 
 	void OVRManager::initialise(){
+		console << "Initialising Oculus Rift...";
 		ovr_Initialize();
 		hmd = ovrHmd_Create(0);
 		if (hmd)
@@ -54,8 +55,10 @@ namespace H3D {
 			ovrHMDPresent = true;
 			// Start the sensor which provides the Rift’s pose and motion.
 			bool tracking_initialised = ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
+			console << "Rift Found!" << std::endl;
 		} else {
 			ovrHMDPresent = false;
+			console << "Rift NOT Found." << std::endl;
 		}	
 	}
 
@@ -66,6 +69,7 @@ namespace H3D {
 
 	ovrPoseStatef OVRManager::getPoseOfHMD(){
 		// Query the HMD for the current tracking state.
+		console << "Getting OR Pose" << std::endl;
 		ovrTrackingState tracking_state = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
 		if (tracking_state.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked))
 		{
@@ -163,6 +167,7 @@ namespace H3D {
 		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		Quatf orientation = Quatf(headPose.Orientation);
 		Matrix4f view = Matrix4f(orientation.Inverted()) * Matrix4f::Translation(-headPose.Position.x,-headPose.Position.y,-headPose.Position.z);
+		console << "Setting Rift View Matrix " << getString(view) << std::endl;
 		glMultMatrixf(getColumnMajorRepresentation(view));
 	}
 
@@ -180,6 +185,17 @@ namespace H3D {
 						m.M[0][2], m.M[1][2], m.M[2][2], m.M[3][2],
 						m.M[0][3], m.M[1][3], m.M[2][3], m.M[3][3] };
 		return M;
+	}
+
+	std::string OVRManager::getString(Matrix4f m){
+	   	std::stringstream s;
+	   	for (int i = 0; i < 4 ;i ++){
+	   		for (int j = 0; j < 4 ;j ++){
+	   			s << m.M[j][i];
+	   		}
+	   		s << std::endl;
+	   	}
+		return s.str();
 	} 
 
 	std::string OVRManager::getConsoletext(){
