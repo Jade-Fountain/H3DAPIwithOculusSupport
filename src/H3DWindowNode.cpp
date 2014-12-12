@@ -65,7 +65,7 @@
 
 //#include <OVR.h>
 using namespace H3D;
-//using virtualreality::OVRManager;
+//using OVR::OVRManager;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -868,6 +868,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       ovrManager->getHMDInfo(stereo_info);
     }
   }
+  Console(4) << ovrManager->getConsoletext() <<std::endl;
 
 
   bool mirror_in_y = mirrored->getValue();
@@ -882,8 +883,8 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   // Projection matrix for mono. Depends on Viewpoint.
   GLdouble mono_projmatrix[16], mono_mvmatrix[16];
   bool any_pointing_device_sensors =
-    X3DPointingDeviceSensorNode::instancesExists();
-  //    Console(4) << clip_near << " " << clip_far << endl;
+  X3DPointingDeviceSensorNode::instancesExists();
+  //Console(4) << clip_near << " " << clip_far << endl;
   if( renderMode->isStereoMode() ) {
     // make sure the focal plane is between the near and far 
     // clipping planes.
@@ -938,7 +939,12 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      ovrManager->setProjectionMatrix(eye_mode);
+      // ovrManager->setProjectionMatrix(eye_mode);
+      vp->setupProjection( eye_mode,
+                           projection_width,
+                           projection_height,
+                           clip_near, clip_far,
+                           stereo_info );
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,
@@ -987,10 +993,10 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else  if( stereo_mode == RenderMode::HDMI_FRAME_PACKED_1080P ) {
       glViewport( 0, 1125, 1920, 1080 );
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
-               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO
+               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ||
                stereo_mode == RenderMode::OCULUS_RIFT ) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-      ovrManager->bindTexture(eye_mode);
+      //ovrManager->bindTexture(eye_mode);
     }
     // clear the buffers before rendering
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1062,7 +1068,12 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      ovrManager->setProjectionMatrix(eye_mode);
+      // ovrManager->setProjectionMatrix(eye_mode);
+      vp->setupProjection( eye_mode,
+                           projection_width,
+                           projection_height,
+                           clip_near, clip_far,
+                           stereo_info );
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,
@@ -1852,4 +1863,3 @@ string H3DWindowNode::takeScreenShot( const string &url ) {
   return string( "Warning: Could not take screenshot! Compiled without the required FreeImage library." );
 #endif // HAVE_FREEIMAGE
 }
-

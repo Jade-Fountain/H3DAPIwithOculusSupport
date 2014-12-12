@@ -33,12 +33,15 @@
 #include "OVR.h"
 #include "H3D/StereoInfo.h"
 #include "H3D/X3DViewpointNode.h"
+#include "H3D\H3DWindowNode.h"
+#include <GL/glew.h>
 
-namespace virtualreality {
+namespace H3D {
 
 	class OVRManager {
 	public:
-		OVRManager(): ovrHMDPresent(false) {}
+		OVRManager() : ovrHMDPresent(false){}
+
 		void initialise();
 		void destroy();
 		
@@ -54,13 +57,20 @@ namespace virtualreality {
 		void configureRenderSettings();
 
 		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
+
 		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
-	private:
+
+		std::string getConsoletext();
+	private:		
+		std::stringstream console;
+
 		ovrHmd hmd;
 
 		ovrPoseStatef getPoseOfHMD();
 
 		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
+		
+		GLfloat* getColumnMajorRepresentation(OVR::Matrix4f m);
 	};
 
 }

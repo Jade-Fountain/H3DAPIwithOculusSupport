@@ -34,19 +34,24 @@
 #include <iostream>
 
  
-namespace virtualreality {
+namespace H3D {
+
+
 	using OVR::Sizei;
+	using OVR::Quatf;
+	using OVR::Matrix4f;
+
 	using H3DUtil::ArithmeticTypes::Quaternion;
 	using H3DUtil::ArithmeticTypes::Rotation;
+	using H3D::X3DViewpointNode;
+
 
 	void OVRManager::initialise(){
-
 		ovr_Initialize();
 		hmd = ovrHmd_Create(0);
 		if (hmd)
 		{
 			ovrHMDPresent = true;
-
 			// Start the sensor which provides the Rift’s pose and motion.
 			bool tracking_initialised = ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
 		} else {
@@ -144,25 +149,43 @@ namespace virtualreality {
 
 	}
 
-	void OVRManager::setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode){
+	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode){
 		//TODO: customize eye render order
-		ovrEyeType eye = H3DEyeModeToOVREyeMode(eye_mode);
-		ovrMatrix4f proj = ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, 0.01f, 10000.0f, true);
+		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+		//ovrMatrix4f proj = ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, 0.01f, 10000.0f, true);
 		// * Test code *
 		// Assign quaternion result directly to view (translation is ignored).
 		//pRender->SetProjection(proj);
 	}
 
-	void OVRManager::setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode){
-		ovrEyeType eye = H3DEyeModeToOVREyeMode(eye_mode);
+	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
+		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
-		ovrQuatf orientation = ovrQuatf(headPose[eye].Orientation);
-		ovrMatrix4f view = ovrMatrix4f(orientation.Inverted()) * ovrMatrix4f::Translation(-WorldEyePos);
-		
+		Quatf orientation = Quatf(headPose.Orientation);
+		Matrix4f view = Matrix4f(orientation.Inverted()) * Matrix4f::Translation(-headPose.Position.x,-headPose.Position.y,-headPose.Position.z);
+		glMultMatrixf(getColumnMajorRepresentation(view));
 	}
 
-	ovrEyeType OVRManager::H3DEyeModeToOVREyeMode(H3D::X3DViewpointNode::EyeMode eye_mode){
-		
+	ovrEyeType OVRManager::H3DEyeModeToOVREyeType(X3DViewpointNode::EyeMode eye_mode){
+		if (eye_mode == X3DViewpointNode::EyeMode::MONO || eye_mode == X3DViewpointNode::EyeMode::LEFT_EYE){
+			return ovrEye_Left;
+		} else {
+			return ovrEye_Right;
+		}
+	}
+
+	GLfloat* OVRManager::getColumnMajorRepresentation(Matrix4f m){
+	    GLfloat M[16] = {m.M[0][0], m.M[1][0], m.M[2][0], m.M[3][0],
+						m.M[0][1], m.M[1][1], m.M[2][1], m.M[3][1],
+						m.M[0][2], m.M[1][2], m.M[2][2], m.M[3][2],
+						m.M[0][3], m.M[1][3], m.M[2][3], m.M[3][3] };
+		return M;
+	} 
+
+	std::string OVRManager::getConsoletext(){
+		std::string s = console.str();
+		console.str(std::string()); //Clear stream
+		return s;
 	}
 
 
