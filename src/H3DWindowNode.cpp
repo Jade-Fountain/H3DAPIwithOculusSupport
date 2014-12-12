@@ -646,11 +646,15 @@ void H3DWindowNode::renderChild( X3DChildNode *child_to_render ) {
 }
 
 void H3DWindowNode::render( X3DChildNode *child_to_render ) {
-  
+
   if ( !isInitialized() )
     initialize();
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
+
+  if(stereo_mode == RenderMode::OCULUS_RIFT){
+	  ovrManager->startFrame();
+  }
 
   if( stereo_mode != last_render_mode ) {
     if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ||
@@ -940,12 +944,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      // ovrManager->setProjectionMatrix(eye_mode);
-      vp->setupProjection( eye_mode,
-                           projection_width,
-                           projection_height,
-                           clip_near, clip_far,
-                           stereo_info );
+      ovrManager->setProjectionMatrix(eye_mode);     
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,
@@ -1069,12 +1068,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      // ovrManager->setProjectionMatrix(eye_mode);
-      vp->setupProjection( eye_mode,
-                           projection_width,
-                           projection_height,
-                           clip_near, clip_far,
-                           stereo_info );
+      ovrManager->setProjectionMatrix(eye_mode);
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,
@@ -1487,6 +1481,10 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   if( headlight_index != -1 ) {
     glPopAttrib();
     X3DLightNode::decreaseLightIndex();
+  }
+
+  if(stereo_mode == RenderMode::OCULUS_RIFT){
+	  ovrManager->endFrame();
   }
 }
 

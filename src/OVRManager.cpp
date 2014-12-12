@@ -117,7 +117,7 @@ namespace H3D {
 		
 		OVR::Sizei renderTargetSize;
 		renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
-		renderTargetSize.h = std::max(int(recommenedTex0Size.h),int(recommenedTex1Size.h));
+		renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 
 		const int eyeRenderMultisample = 1;
 		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
@@ -137,15 +137,13 @@ namespace H3D {
 		cfg.OGL.Header.Multisample = backBufferMultisample;
 		cfg.OGL.Window = window;
 		cfg.OGL.DC = hdc;
-		ovrBool result = ovrHmd_ConfigureRendering(hmd, &cfg.Config, distortionCaps, eyesFov, EyeRenderDesc);
-				
+		ovrBool result = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
 	}
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
 		//TODO
+
 	}
-
-
 
 	void OVRManager::getHMDInfo(H3D::StereoInfo* info){
 		// info->interocularDistance->setValue(2 * std::fabs(ovrEyeRenderDesc::HmdToEyeViewOffset[0]));
@@ -157,23 +155,31 @@ namespace H3D {
 		Quaternion q = Quaternion(orientation.x,orientation.y,orientation.z,orientation.w);
 
 		info->headTilt->setValue(Rotation(q));
+	}
 
+	void OVRManager::startFrame(){
+		// ovrFrameTiming hmdFrameTiming =
+		ovrHmd_BeginFrame(hmd, 0);
+	}
+
+	void OVRManager::endFrame(){
+		ovrHmd_EndFrame(hmd, headPoses, eyeTextures);
 	}
 
 	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode){
 		//TODO: customize eye render order
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		ovrMatrix4f proj = ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, 0.01f, 10000.0f, true);
-		// * Test code *
-		// Assign quaternion result directly to view (translation is ignored).
-		pRender->SetProjection(proj);
+		float near_distance = 0.001f;
+		float far_distance = 100.0f;
+		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
+		glMultMatrixf(getColumnMajorRepresentation(proj));
 	}
 
 	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, eye);
-		OVR::Quatf orientation = OVR::Quatf(headPose.Orientation);
-		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPose.Position.x,-headPose.Position.y,-headPose.Position.z);
+		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
+		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
+		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z);
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
 	}
 

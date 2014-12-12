@@ -47,8 +47,6 @@ namespace H3D {
 		
 		bool ovrHMDPresent;
 
-		ovrEyeRenderDesc EyeRenderDesc;
-
     	//Get IPD, FOV, pose, etc
 		void getHMDInfo(H3D::StereoInfo* info);
 
@@ -63,10 +61,20 @@ namespace H3D {
 		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		std::string getConsoletext();
+		
+		void startFrame();
+		
+		void endFrame();
+
 	private:		
+
 		std::stringstream console;
 
 		ovrHmd hmd;
+
+		ovrEyeRenderDesc EyeRenderDesc[2];
+		ovrPosef headPoses[2];
+		ovrTexture eyeTextures[2];
 
 		ovrPoseStatef getPoseOfHMD();
 
