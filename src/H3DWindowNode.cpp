@@ -1112,6 +1112,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else  if( stereo_mode == RenderMode::HDMI_FRAME_PACKED_1080P ) {
       glViewport( 0, 0, 1920, 1080 );
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
+               stereo_mode == RenderMode::OCULUS_RIFT || 
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ) {
       glViewport( width->getValue() / 2, 0, 
                   width->getValue() / 2, height->getValue() );
