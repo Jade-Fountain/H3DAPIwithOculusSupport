@@ -32,7 +32,7 @@
 #include "H3DUtil/Quaternion.h"
 #include "H3DUtil/Rotation.h"
 #include <iostream>
-#include "OVR_CAPI_GL.h"
+
 
  
 namespace H3D {
@@ -43,7 +43,7 @@ namespace H3D {
 
 
 	void OVRManager::initialise(){
-		console << "Initialising Oculus Rift...";
+		std::cerr << "Initialising Oculus Rift...";
 		ovr_Initialize();
 		hmd = ovrHmd_Create(0);
 		if (hmd)
@@ -140,15 +140,18 @@ namespace H3D {
 	}
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
+		//One texture for both eyes
 		glGenTextures(1, &oculusRiftTextureID);
    		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID);
    		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID, 0);
 
+  //  		//Viewports info
 		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h);
+		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h); //TODO refactor
 		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i((renderTargetSize.w + 1) / 2, 0);
 		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
+		//Render texture info for rendering and then distortion
 		eyeTextures[ovrEye_Left].OGL.Header.API = ovrRenderAPI_OpenGL;
 		eyeTextures[ovrEye_Left].OGL.Header.RenderViewport = eyeViewports[ovrEye_Left];
 		eyeTextures[ovrEye_Left].OGL.Header.TextureSize = renderTargetSize;
@@ -180,7 +183,7 @@ namespace H3D {
 	}
 
 	void OVRManager::endFrame(){
-		ovrHmd_EndFrame(hmd, headPoses, eyeTextures);
+		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture); //must convert to opengl texture pointer; hence &..[0].Texture
 	}
 
 	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode){
@@ -201,14 +204,8 @@ namespace H3D {
 	}
 
 	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
-		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		if(eye == ovrEye_Left){
-			glNamedFramebufferDrawBuffer(oculusRiftTextureID, GL_LEFT);
-		} else {
-			glNamedFramebufferDrawBuffer(oculusRiftTextureID, GL_RIGHT);
-		}
+		glBindFramebuffer(GL_FRAMEBUFFER, oculusRiftTextureID);
 	}
-
 
 	ovrEyeType OVRManager::H3DEyeModeToOVREyeType(X3DViewpointNode::EyeMode eye_mode){
 		if (eye_mode == X3DViewpointNode::EyeMode::MONO || eye_mode == X3DViewpointNode::EyeMode::LEFT_EYE){

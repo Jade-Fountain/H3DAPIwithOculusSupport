@@ -35,12 +35,15 @@
 #include "H3D/StereoInfo.h"
 #include "H3D/X3DViewpointNode.h"
 #include <GL/glew.h>
+#include "OVR_CAPI_GL.h"
 
 namespace H3D {
 
 	class OVRManager {
 	public:
-		OVRManager() : ovrHMDPresent(false){}
+		OVRManager() : ovrHMDPresent(false),
+					   oculusRiftTextureID(0),
+					   renderTargetSize(){}
 
 		void initialise();
 		void destroy();
@@ -77,7 +80,7 @@ namespace H3D {
 		ovrEyeRenderDesc EyeRenderDesc[2];
 		ovrPosef headPoses[2];
 		ovrGLTexture eyeTextures[2];
-		ovrEyeViewport eyeViewports[2];
+		ovrRecti eyeViewports[2];
 		OVR::Sizei renderTargetSize;
 
 		GLuint oculusRiftTextureID;

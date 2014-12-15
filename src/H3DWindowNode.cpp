@@ -246,7 +246,7 @@ void H3DWindowNode::initialize() {
   initWindowWithContext();
   
   ovrManager->initialise();
-  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
+  //ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
