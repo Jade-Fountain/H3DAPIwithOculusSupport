@@ -111,16 +111,17 @@ namespace H3D {
 	}
 
 	void OVRManager::configureRenderSettings(HWND window, HDC hdc){
+		if(!hmd) return;
+
 		//Configure Stereo settings.
 		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
 		OVR::Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
-		
 		renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
 		renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 
 		const int eyeRenderMultisample = 1;
-		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
 		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
+		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
 		//The actual RT size may be different due to HW limits.
 		//TODO
 		//renderTargetSize.w = pRendertargetTexture->GetWidth();
@@ -130,25 +131,79 @@ namespace H3D {
 		ovrGLConfig cfg;
 
 		const int backBufferMultisample = 1;
-				
 		cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
 		cfg.OGL.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
 		cfg.OGL.Header.Multisample = backBufferMultisample;
 		cfg.OGL.Window = window;
 		cfg.OGL.DC = hdc;
-		ovrBool result = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
+		ovrBool success = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
+		if (success){
+			ovrHmd_AttachToWindow(hmd, window, NULL, NULL);	
+		} 
+		ovrHMDPresent = success;
+		
 	}
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
+	//OLD _____________________________________________________________
 		//One texture for both eyes
-		glGenTextures(1, &oculusRiftTextureID);
-   		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID);
-   		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID, 0);
+		// glGenTextures(1, &oculusRiftTextureID);
+	 //    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID);
 
-  //  		//Viewports info
+ 	//     GLint MaximumSamples;
+	 //    glGetIntegerv(GL_MAX_SAMPLES, &MaximumSamples);
+	 //    Beep(500,1000);Sleep(1000);
+	 //    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 2, GL_RGBA, width, height, false);
+		// Beep(500,1000);Sleep(1000);
+		// glGenTextures(1, &oculusFramebufferID);		
+  //  		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, oculusFramebufferID);
+  //  		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, oculusRiftTextureID, 0);
+
+		//NEW _____________________________________________________________
+
+		// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+		oculusFramebufferID = 0;
+		glGenFramebuffers(1, &oculusFramebufferID);
+		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID);
+
+		// The texture we're going to render to
+		oculusRiftTextureID = 0;
+		glGenTextures(1, &oculusRiftTextureID);
+		 
+		// "Bind" the newly created texture : all future texture functions will modify this texture
+		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID);
+		 
+		// Give an empty image to OpenGL ( the last "0" )
+		glTexImage2D(GL_TEXTURE_2D, 0,GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		 
+		// Poor filtering. Needed !
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		// The depth buffer
+		oculusDepthbufferID = 0;
+		glGenRenderbuffers(1, &oculusDepthbufferID);
+		glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID);
+
+		// Set "renderedTexture" as our colour attachement #0
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID, 0);
+
+		// Set the list of draw buffers.
+		GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+		// Always check that our framebuffer is ok
+		// if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		// return false;
+
+		//OTHER_____________________________________________________________
+
+		//Viewports info
 		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h); //TODO refactor
-		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i((renderTargetSize.w + 1) / 2, 0);
+		eyeViewports[ovrEye_Left].Size = OVR::Sizei(width / 2, height); //TODO refactor
+		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i((width + 1) / 2, 0);
 		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
 		//Render texture info for rendering and then distortion
@@ -163,13 +218,15 @@ namespace H3D {
 		eyeTextures[ovrEye_Right] = eyeTextures[ovrEye_Left];
 		eyeTextures[ovrEye_Right].OGL.Header.RenderViewport = eyeViewports[ovrEye_Right];
 		eyeTextures[ovrEye_Right].Texture.Header.RenderViewport = eyeViewports[ovrEye_Right];
+
 	}
 
 	void OVRManager::getHMDInfo(H3D::StereoInfo* info){
-		// info->interocularDistance->setValue(2 * std::fabs(ovrEyeRenderDesc::HmdToEyeViewOffset[0]));
 		//TODO load in correct IPD as above
-		info->interocularDistance->setValue(0.062); 
+		info->interocularDistance->setValue(2 * std::fabs(EyeRenderDesc[0].HmdToEyeViewOffset.x));
 		info->focalDistance->setValue(99999999999999);
+		
+		//TODO remove below
 		ovrQuatf orientation = getPoseOfHMD().ThePose.Orientation;
 
 		Quaternion q = Quaternion(orientation.x,orientation.y,orientation.z,orientation.w);

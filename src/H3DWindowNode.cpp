@@ -246,7 +246,6 @@ void H3DWindowNode::initialize() {
   initWindowWithContext();
   
   ovrManager->initialise();
-  //ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
 
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
@@ -291,6 +290,9 @@ void H3DWindowNode::initialize() {
   }
   Node::initialize();
   last_render_mode = renderMode->getRenderMode();
+
+  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
+
 }
 
 void renderStyli() {
@@ -870,10 +872,10 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   if( stereo_info ) {
     if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
       //Get IPD, FOV, pose, etc
-      ovrManager->getHMDInfo(stereo_info);
+      // ovrManager->getHMDInfo(stereo_info);
     }
   }
-  Console(4) << ovrManager->getConsoletext() << std::endl;
+  // Console(4) << ovrManager->getConsoletext() << std::endl;
 
 
   bool mirror_in_y = mirrored->getValue();
@@ -952,7 +954,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            clip_near, clip_far,
                            stereo_info );
     }
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
       ovrManager->drawBuffer(eye_mode);
     } else {
       glDrawBuffer(GL_BACK_LEFT);
@@ -1000,7 +1002,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ||
                stereo_mode == RenderMode::OCULUS_RIFT ) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-      //ovrManager->bindTexture(eye_mode);
     }
     // clear the buffers before rendering
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1081,9 +1082,10 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            stereo_info );
     }
     
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
+    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
       ovrManager->drawBuffer(eye_mode);
-      glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
+      // clear the buffers before rendering
+      // glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
     } else if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
@@ -1246,7 +1248,9 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 #ifdef  HAVE_PROFILER
     H3DUtil::H3DTimer::stepBegin("Stereo_swapBuffers");
 #endif
-    swapBuffers();
+    if(stereo_mode != RenderMode::OCULUS_RIFT){
+      swapBuffers();
+    }
 #ifdef  HAVE_PROFILER
     H3DUtil::H3DTimer::stepEnd("Stereo_swapBuffers");
 #endif
@@ -1492,7 +1496,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   }
 
   if(stereo_mode == RenderMode::OCULUS_RIFT){
-	  ovrManager->endFrame();
+	 ovrManager->endFrame();
   }
 }
 

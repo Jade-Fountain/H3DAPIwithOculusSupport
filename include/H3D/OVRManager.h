@@ -84,6 +84,8 @@ namespace H3D {
 		OVR::Sizei renderTargetSize;
 
 		GLuint oculusRiftTextureID;
+		GLuint oculusFramebufferID;
+		GLuint oculusDepthbufferID;
 
 		ovrPoseStatef getPoseOfHMD();
 
