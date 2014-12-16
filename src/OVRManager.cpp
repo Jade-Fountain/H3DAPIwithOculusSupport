@@ -250,6 +250,10 @@ namespace H3D {
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[eye]);
+
+		// glMatrixMode(GL_TEXTURE);
+		// glScalef(1,-1,1);
+		
 	}
 
 	void OVRManager::unbindBuffers(){
