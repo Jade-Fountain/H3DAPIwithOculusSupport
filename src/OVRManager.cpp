@@ -141,7 +141,9 @@ namespace H3D {
 			ovrHmd_AttachToWindow(hmd, window, NULL, NULL);	
 		} 
 		ovrHMDPresent = success;
-		
+
+		//unbind
+		unbindBuffers();		
 	}
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
@@ -202,7 +204,7 @@ namespace H3D {
 
 		//Viewports info
 		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-		eyeViewports[ovrEye_Left].Size = OVR::Sizei(width / 2, height); //TODO refactor
+		eyeViewports[ovrEye_Left].Size = OVR::Sizei(width / 2, -height); 
 		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i((width + 1) / 2, 0);
 		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
@@ -261,7 +263,13 @@ namespace H3D {
 	}
 
 	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
-		glBindFramebuffer(GL_FRAMEBUFFER, oculusRiftTextureID);
+		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID);
+		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID);
+	}
+
+	void OVRManager::unbindBuffers(){
+		glBindTexture(GL_TEXTURE_2D, 0);
+   		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	ovrEyeType OVRManager::H3DEyeModeToOVREyeType(X3DViewpointNode::EyeMode eye_mode){

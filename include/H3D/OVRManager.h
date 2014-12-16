@@ -68,6 +68,8 @@ namespace H3D {
 		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		void drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode);
+		
+		void unbindBuffers();
 
 		std::string getConsoletext();
 
