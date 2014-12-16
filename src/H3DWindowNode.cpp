@@ -999,9 +999,10 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else  if( stereo_mode == RenderMode::HDMI_FRAME_PACKED_1080P ) {
       glViewport( 0, 1125, 1920, 1080 );
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
-               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ||
-               stereo_mode == RenderMode::OCULUS_RIFT ) {
+               stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT){
+      ovrManager->setViewport(eye_mode);
     }
     // clear the buffers before rendering
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1085,7 +1086,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
       ovrManager->drawBuffer(eye_mode);
       // clear the buffers before rendering
-      // glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
+      glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
     } else if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
@@ -1116,14 +1117,15 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glViewport( 0, 0, 1280, 720 );
     } else  if( stereo_mode == RenderMode::HDMI_FRAME_PACKED_1080P ) {
       glViewport( 0, 0, 1920, 1080 );
-    } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
-               stereo_mode == RenderMode::OCULUS_RIFT || 
+    } else if( stereo_mode == RenderMode::VERTICAL_SPLIT ||  
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO ) {
       glViewport( width->getValue() / 2, 0, 
                   width->getValue() / 2, height->getValue() );
     } else if( stereo_mode == RenderMode::NVIDIA_3DVISION  ) {
       glViewport( width->getValue(), 0, 
                   width->getValue(), height->getValue() );
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT){
+      ovrManager->setViewport(eye_mode);
     }
 
     glMatrixMode(GL_MODELVIEW);

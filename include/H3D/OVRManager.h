@@ -42,7 +42,6 @@ namespace H3D {
 	class OVRManager {
 	public:
 		OVRManager() : ovrHMDPresent(false),
-					   oculusRiftTextureID(0),
 					   renderTargetSize(){}
 
 		void initialise();
@@ -50,14 +49,13 @@ namespace H3D {
 		
 		bool ovrHMDPresent;
 
-    	//Get IPD, FOV, pose, etc
-		void getHMDInfo(H3D::StereoInfo* info);
-
 		bool checkHealthWarningState();
 
 		void configureRenderSettings(HWND window, HDC hdc);
 
 		void createRenderTexture(int width, int height, int samples);
+
+		OVR::Sizei getTextureSizei();
 		
 		void startFrame();
 		
@@ -66,6 +64,8 @@ namespace H3D {
 		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
+
+		void setViewport(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		void drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode);
 		
@@ -85,9 +85,9 @@ namespace H3D {
 		ovrRecti eyeViewports[2];
 		OVR::Sizei renderTargetSize;
 
-		GLuint oculusRiftTextureID;
-		GLuint oculusFramebufferID;
-		GLuint oculusDepthbufferID;
+		GLuint oculusRiftTextureID[2];
+		GLuint oculusFramebufferID[2];
+		GLuint oculusDepthbufferID[2];
 
 		ovrPoseStatef getPoseOfHMD();
 
