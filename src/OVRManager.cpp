@@ -116,21 +116,20 @@ namespace H3D {
 		//Configure Stereo settings.
 		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
 		OVR::Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
-		renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
+		renderTargetSize.w = (recommenedTex0Size.w + recommenedTex1Size.w) / 2;
 		renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 
 		const int eyeRenderMultisample = 1;
-		createRenderTexture(renderTargetSize.w / 2, renderTargetSize.h / 2, eyeRenderMultisample);
+		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
 		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
 		//The actual RT size may be different due to HW limits.
 		//TODO
 		renderTargetSize = getTextureSizei();
 
-
 		//Viewports info
 		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w / 2, renderTargetSize.h); 
-		eyeViewports[ovrEye_Right].Pos = OVR::Vector2i(0, 0);
+		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w, renderTargetSize.h); 
+		eyeViewports[ovrEye_Right].Pos = eyeViewports[ovrEye_Left].Pos;
 		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
 		// Configure OpenGL.
@@ -221,7 +220,7 @@ namespace H3D {
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
-		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z);
+		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
 	}
 
@@ -250,9 +249,6 @@ namespace H3D {
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[eye]);
-
-		// glMatrixMode(GL_TEXTURE);
-		// glScalef(1,-1,1);
 		
 	}
 
