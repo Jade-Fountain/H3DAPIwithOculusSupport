@@ -879,7 +879,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
 
   bool mirror_in_y = mirrored->getValue();
-    
+
   if( mirror_in_y != last_loop_mirrored ) 
     H3DDisplayListObject::DisplayList::rebuildAllDisplayLists();
 

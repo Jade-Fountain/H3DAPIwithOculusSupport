@@ -41,13 +41,18 @@ namespace H3D {
 
 	class OVRManager {
 	public:
+		bool ovrHMDPresent;
+
 		OVRManager() : ovrHMDPresent(false),
+					   flipShaderLoaded(false),
 					   renderTargetSize(){}
 
 		void initialise();
 		void destroy();
-		
-		bool ovrHMDPresent;
+
+		void createShaders();		
+
+		void dismissHealthWarning();
 
 		bool checkHealthWarningState();
 
@@ -87,12 +92,17 @@ namespace H3D {
 
 		GLuint oculusRiftTextureID[2];
 		GLuint oculusFramebufferID[2];
+		GLuint flippedRiftTextureID[2];
+		GLuint flippedFramebufferID[2];
 		GLuint oculusDepthbufferID[2];
+
+		GLuint flipTextureYShaderProgram;
+		bool flipShaderLoaded;
 
 		ovrPoseStatef getPoseOfHMD();
 
 		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
-		
+
 		//Utilities
 		GLfloat* getColumnMajorRepresentation(OVR::Matrix4f m);
 

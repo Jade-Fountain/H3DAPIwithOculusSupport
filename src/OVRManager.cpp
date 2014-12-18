@@ -55,13 +55,52 @@ namespace H3D {
 		} else {
 			ovrHMDPresent = false;
 			console << "Rift NOT Found." << std::endl;
-		}	
+		}
 	}
 
 	void OVRManager::destroy(){
 		ovrHmd_Destroy(hmd);
 		ovr_Shutdown();
 	}
+
+	void OVRManager::createShaders(){
+		const GLchar * vertexShaderSource[] = { "void main(){}" };
+		const GLchar * fragmentShaderSource[] = {"void main(){gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);}"};
+		GLuint flipVertexShaderObjectID = glCreateShader(GL_VERTEX_SHADER);
+		GLuint flipFragmentShaderObjectID = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(flipVertexShaderObjectID, 1, vertexShaderSource, NULL);
+		glCompileShader(flipVertexShaderObjectID);
+		glShaderSource(flipFragmentShaderObjectID, 1, fragmentShaderSource, NULL);
+		glCompileShader(flipFragmentShaderObjectID);
+
+		GLint vcompiled(0), fcompiled(0), linked(0);
+
+	 	glGetShaderiv(flipVertexShaderObjectID, GL_COMPILE_STATUS, &vcompiled);
+		glGetShaderiv(flipFragmentShaderObjectID, GL_COMPILE_STATUS, &fcompiled);
+
+		//Beep(500,1000); Sleep(1000);
+
+		if(bool(vcompiled) && bool(fcompiled)){
+			flipTextureYShaderProgram = glCreateProgram();
+
+			glAttachShader(flipTextureYShaderProgram, flipVertexShaderObjectID);
+			glAttachShader(flipTextureYShaderProgram, flipFragmentShaderObjectID);
+
+			glLinkProgram(flipTextureYShaderProgram);     
+
+			glGetProgramiv(flipTextureYShaderProgram, GL_LINK_STATUS, &linked);
+			// Beep(500,1000); Sleep(1000);
+		}
+		//delete[] vertexShaderSource;
+		//delete[] fragmentShaderSource;
+
+ 		
+ 		flipShaderLoaded = bool(linked);
+		if (linked == 0) {
+			// Beep(500,1000);
+		}
+	}
+
 
 	ovrPoseStatef OVRManager::getPoseOfHMD(){
 		// Query the HMD for the current tracking state.
@@ -73,6 +112,17 @@ namespace H3D {
 			return pose;
 		}
 		return ovrPoseStatef();		
+	}
+
+	void OVRManager::dismissHealthWarning(){
+		ovrHSWDisplayState hswDisplayState;
+		ovrHmd_GetHSWDisplayState(hmd, &hswDisplayState);
+		// Dismiss the warning if the user pressed the appropriate key or if the user
+		// is tapping the side of the hmd.
+		if (hswDisplayState.Displayed)
+		{
+			ovrHmd_DismissHSWDisplay(hmd);
+		}
 	}
 
 	bool OVRManager::checkHealthWarningState(){
@@ -112,6 +162,8 @@ namespace H3D {
 
 	void OVRManager::configureRenderSettings(HWND window, HDC hdc){
 		if(!hmd) return;
+		ovrHmd_AttachToWindow(hmd, window, NULL, NULL);
+		ovrHmd_SetEnabledCaps(hmd, hmd->HmdCaps);
 
 		//Configure Stereo settings.
 		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
@@ -139,14 +191,15 @@ namespace H3D {
 		cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
 		cfg.OGL.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
 		cfg.OGL.Header.Multisample = backBufferMultisample;
+		cfg.Config.Header.API = ovrRenderAPI_OpenGL;
+		cfg.Config.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
+		cfg.Config.Header.Multisample = backBufferMultisample;
 		cfg.OGL.Window = window;
 		cfg.OGL.DC = hdc;
 		ovrBool success = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
-		if (success){
-			ovrHmd_AttachToWindow(hmd, window, NULL, NULL);
-		} 
 		ovrHMDPresent = success;
 
+		createShaders();
 		//unbind
 		unbindBuffers();		
 	}
@@ -154,14 +207,47 @@ namespace H3D {
 	void OVRManager::createRenderTexture(int width, int height, int samples){
 		// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
 		glGenTextures(2, &oculusRiftTextureID[0]);
+		glGenTextures(2, &flippedRiftTextureID[0]);
+
 		glGenFramebuffers(2, &oculusFramebufferID[0]);
+		glGenFramebuffers(2, &flippedFramebufferID[0]);
+
 		glGenRenderbuffers(2, &oculusDepthbufferID[0]);
 
 		// The texture we're going to render to
 		
 		for (int i = 0; i < 2 ; i++){
-			//Frame buffer
+			//Frame buffer to READ for blit at end (opengl has textures upside down)
+			//glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
+			//The final texture which will be blitted
+			glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[i]);
+			//Init backbuffer flipped textures
+			// "Bind" the newly created texture : all future texture functions will modify this texture
+			glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[i]);
+			// Give an empty image to OpenGL ( the last "0" )
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+			// Poor filtering. Needed !
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			// The depth buffer
+			glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[i]);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[i]);
+
+			// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[i], 0);
+			// Set the list of draw buffers.
+			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+			glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+
+
+
+			//Frame buffer to READ for blit at end (opengl has textures upside down)
+			//The final texture which will be blitted
 			glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[i]);
+			
+			//Init output textures
 			// "Bind" the newly created texture : all future texture functions will modify this texture
 			glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[i]);
 			// Give an empty image to OpenGL ( the last "0" )
@@ -170,24 +256,20 @@ namespace H3D {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-			// The depth buffer
-			glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[i]);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[i]);
 
-			// Set "oculusRiftTextureID" as our colour attachement #0
+			// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[i], 0);
 
 			// Set the list of draw buffers.
-			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-			glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-		}		 
+			// GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
+			glDrawBuffers(1, DrawBuffers1); // "1" is the size of DrawBuffers
 
+			
+
+		}
 		// Always check that our framebuffer is ok
 		// if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		// return false;
-
-
 	}
 
 	OVR::Sizei OVRManager::getTextureSizei(){
@@ -204,7 +286,28 @@ namespace H3D {
 	}
 
 	void OVRManager::endFrame(){
-		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture); //must convert to opengl texture pointer; hence &..[0].Texture
+		// for (int eye = 0; eye < 2 ; eye++){
+		// 	//Set up orthogonal clip space
+		// 	glMatrixMode(GL_PROJECTION);
+		// 	glLoadIdentity();
+		// 	glMatrixMode(GL_MODELVIEW);
+		// 	glLoadIdentity();
+		// 	glViewport( eyeViewports[eye].Pos.x, eyeViewports[eye].Pos.y, 
+		// 			eyeViewports[eye].Pos.x + eyeViewports[eye].Size.w, eyeViewports[eye].Pos.y + eyeViewports[eye].Size.h );
+		// 	//Bind framebuffer
+		// 	glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
+			
+		// 	//Draw texture upside down on a quad
+		// 	glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
+		// 	glBegin(GL_QUADS);
+		// 	glTexCoord2f(1,0); glVertex3f(1,1,-1);
+		// 	glTexCoord2f(1,1); glVertex3f(1,-1,-1);
+		// 	glTexCoord2f(0,1); glVertex3f(-1,-1,-1);
+		// 	glTexCoord2f(0,0); glVertex3f(-1,1,-1);
+		// 	glEnd();
+		// }
+		//must convert to opengl texture pointer; hence &..[0].Texture
+		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture);
 	}
 
 	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode){
@@ -232,24 +335,21 @@ namespace H3D {
 	}
 
 	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
-		//Render texture info for rendering and distortion
-		eyeTextures[ovrEye_Left].OGL.Header.API = ovrRenderAPI_OpenGL;
-		eyeTextures[ovrEye_Left].OGL.Header.RenderViewport = eyeViewports[ovrEye_Left];
-		eyeTextures[ovrEye_Left].OGL.Header.TextureSize = renderTargetSize;
-		eyeTextures[ovrEye_Left].OGL.TexId = oculusRiftTextureID[ovrEye_Left];
-		eyeTextures[ovrEye_Left].Texture.Header.API = ovrRenderAPI_OpenGL;
-		eyeTextures[ovrEye_Left].Texture.Header.RenderViewport = eyeViewports[ovrEye_Left];
-		eyeTextures[ovrEye_Left].Texture.Header.TextureSize = renderTargetSize;
-
-		eyeTextures[ovrEye_Right] = eyeTextures[ovrEye_Left];
-		eyeTextures[ovrEye_Right].OGL.TexId = oculusRiftTextureID[ovrEye_Right];
-		eyeTextures[ovrEye_Right].OGL.Header.RenderViewport = eyeViewports[ovrEye_Right];
-		eyeTextures[ovrEye_Right].Texture.Header.RenderViewport = eyeViewports[ovrEye_Right];
-
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
-		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[eye]);
+		//Render texture info for rendering and distortion
+		eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
+		eyeTextures[eye].OGL.Header.RenderViewport = eyeViewports[eye];
+		eyeTextures[eye].OGL.Header.TextureSize = renderTargetSize;
+		eyeTextures[eye].OGL.TexId = flippedRiftTextureID[eye];
+		eyeTextures[eye].Texture.Header.API = ovrRenderAPI_OpenGL;
+		eyeTextures[eye].Texture.Header.RenderViewport = eyeViewports[eye];
+		eyeTextures[eye].Texture.Header.TextureSize = renderTargetSize;
+
+		glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
+		//glBindTexture(GL_TEXTURE_2D, flippedFramebufferID[eye]);
 		
+		//if(flipShaderLoaded)
+		// glUseProgram(flipTextureYShaderProgram);
 	}
 
 	void OVRManager::unbindBuffers(){
