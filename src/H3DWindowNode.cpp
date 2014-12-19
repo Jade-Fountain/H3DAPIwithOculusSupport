@@ -291,7 +291,10 @@ void H3DWindowNode::initialize() {
   Node::initialize();
   last_render_mode = renderMode->getRenderMode();
 
-  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
+ // if( stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
+    bool separateEyeTex = true;
+    ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC(), separateEyeTex);
+  // }
 
 }
 
@@ -654,7 +657,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
 
-  if(stereo_mode == RenderMode::OCULUS_RIFT){
+  if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
 	  ovrManager->startFrame();
   }
 
@@ -1001,7 +1004,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT){
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
       ovrManager->setViewport(eye_mode);
     }
     // clear the buffers before rendering
@@ -1086,7 +1089,9 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
       ovrManager->drawBuffer(eye_mode);
       // clear the buffers before rendering
-      glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
+      if(ovrManager->separateEyeTextures){
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
+      }
     } else if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
@@ -1124,7 +1129,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::NVIDIA_3DVISION  ) {
       glViewport( width->getValue(), 0, 
                   width->getValue(), height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT){
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
       ovrManager->setViewport(eye_mode);
     }
 
@@ -1497,7 +1502,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     X3DLightNode::decreaseLightIndex();
   }
 
-  if(stereo_mode == RenderMode::OCULUS_RIFT){
+  if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
 	 ovrManager->endFrame();
   }
 }

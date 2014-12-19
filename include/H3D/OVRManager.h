@@ -42,9 +42,11 @@ namespace H3D {
 	class OVRManager {
 	public:
 		bool ovrHMDPresent;
+		bool separateEyeTextures;
 
 		OVRManager() : ovrHMDPresent(false),
 					   flipShaderLoaded(false),
+					   separateEyeTextures(false),
 					   renderTargetSize(){}
 
 		void initialise();
@@ -56,9 +58,11 @@ namespace H3D {
 
 		bool checkHealthWarningState();
 
-		void configureRenderSettings(HWND window, HDC hdc);
+		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_);
 
 		void createRenderTexture(int width, int height, int samples);
+
+		void createRenderTextureForEye(int width, int height, int samples, int eye);
 
 		OVR::Sizei getTextureSizei();
 		

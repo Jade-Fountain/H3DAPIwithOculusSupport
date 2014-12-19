@@ -160,29 +160,40 @@ namespace H3D {
 		return false;
 	}
 
-	void OVRManager::configureRenderSettings(HWND window, HDC hdc){
+	void OVRManager::configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_){
 		if(!hmd) return;
+		separateEyeTextures = separateEyeTextures_;
 		ovrHmd_AttachToWindow(hmd, window, NULL, NULL);
 		ovrHmd_SetEnabledCaps(hmd, hmd->HmdCaps);
 
 		//Configure Stereo settings.
 		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
 		OVR::Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
-		renderTargetSize.w = (recommenedTex0Size.w + recommenedTex1Size.w) / 2;
-		renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 
+		if(separateEyeTextures){
+			renderTargetSize.w = (recommenedTex0Size.w + recommenedTex1Size.w) / 2;
+			renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
+			//Viewports info
+			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
+			eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w, renderTargetSize.h); 
+			eyeViewports[ovrEye_Right].Pos = eyeViewports[ovrEye_Left].Pos;
+			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
+		} else {
+			renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;			
+			renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
+			//Viewports info
+			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
+			eyeViewports[ovrEye_Left].Size = OVR::Sizei((renderTargetSize.w + 1) / 2, renderTargetSize.h); 
+			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTargetSize.w / 2, 0);
+			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
+		}
 		const int eyeRenderMultisample = 1;
 		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
 		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
 		//The actual RT size may be different due to HW limits.
 		//TODO
-		renderTargetSize = getTextureSizei();
+		//renderTargetSize = getTextureSizei();
 
-		//Viewports info
-		eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-		eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w, renderTargetSize.h); 
-		eyeViewports[ovrEye_Right].Pos = eyeViewports[ovrEye_Left].Pos;
-		eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
 		// Configure OpenGL.
 		ovrGLConfig cfg;
@@ -206,70 +217,91 @@ namespace H3D {
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
 		// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-		//glGenTextures(2, &oculusRiftTextureID[0]);
-		glGenTextures(2, &flippedRiftTextureID[0]);
+		if(separateEyeTextures){ 
+			glGenTextures(2, &oculusRiftTextureID[0]);
+			glGenTextures(2, &flippedRiftTextureID[0]);
 
-		//glGenFramebuffers(2, &oculusFramebufferID[0]);
-		glGenFramebuffers(2, &flippedFramebufferID[0]);
+			glGenFramebuffers(2, &oculusFramebufferID[0]);
+			glGenFramebuffers(2, &flippedFramebufferID[0]);
 
-		glGenRenderbuffers(2, &oculusDepthbufferID[0]);
+			glGenRenderbuffers(2, &oculusDepthbufferID[0]);
 
-		// The texture we're going to render to
+			// The texture we're going to render to
+			
+			for (int eye = 0; eye < 2 ; eye++){
+				createRenderTextureForEye(width, height, samples, eye);
+			}
 		
-		for (int i = 0; i < 2 ; i++){
-			//Frame buffer to READ for blit at end (opengl has textures upside down)
-			//glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
-			//The final texture which will be blitted
-			glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[i]);
-			//Init backbuffer flipped textures
-			// "Bind" the newly created texture : all future texture functions will modify this texture
-			glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[i]);
-			// Give an empty image to OpenGL ( the last "0" )
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-			// Poor filtering. Needed !
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			// The depth buffer
-			glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[i]);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[i]);
+		} else {
+			glGenTextures(1, &oculusRiftTextureID[0]);
+			glGenTextures(1, &flippedRiftTextureID[0]);
 
-			// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[i], 0);
-			// Set the list of draw buffers.
-			GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-			glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+			glGenFramebuffers(1, &oculusFramebufferID[0]);
+			glGenFramebuffers(1, &flippedFramebufferID[0]);
 
+			glGenRenderbuffers(1, &oculusDepthbufferID[0]);
 
-
-
-			// //Frame buffer to READ for blit at end (opengl has textures upside down)
-			// //The final texture which will be blitted
-			// glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[i]);
+			oculusRiftTextureID[1] = oculusRiftTextureID[0]; //Single texture per eye
+			flippedRiftTextureID[1] = flippedRiftTextureID[0];
+			oculusFramebufferID[1] = oculusFramebufferID[0];
+			flippedFramebufferID[1] = flippedFramebufferID[0];
+			oculusDepthbufferID[1] = oculusDepthbufferID[0];
 			
-			// //Init output textures
-			// // "Bind" the newly created texture : all future texture functions will modify this texture
-			// glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[i]);
-			// // Give an empty image to OpenGL ( the last "0" )
-			// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-			// // Poor filtering. Needed !
-			// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-
-			// // Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
-			// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[i], 0);
-
-			// // Set the list of draw buffers.
-			// // GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
-			// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-
-			
-
+			createRenderTextureForEye(width, height, samples, 0);
 		}
+			
 		// Always check that our framebuffer is ok
 		// if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		// return false;
+	}
+
+	void OVRManager::createRenderTextureForEye(int width, int height, int samples, int eye){
+		//Frame buffer to READ for blit at end (opengl has textures upside down)
+		//glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
+		//The final texture which will be blitted
+		glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
+		//Init backbuffer flipped textures
+		// "Bind" the newly created texture : all future texture functions will modify this texture
+		glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
+		// Give an empty image to OpenGL ( the last "0" )
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		// Poor filtering. Needed !
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		// The depth buffer
+		glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[eye]);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[eye]);
+
+		// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[eye], 0);
+		// Set the list of draw buffers.
+		// GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+
+
+
+		//Frame buffer to READ for blit at end (opengl has textures upside down)
+		//The final texture which will be blitted
+		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
+		
+		//Init output textures
+		// "Bind" the newly created texture : all future texture functions will modify this texture
+		glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[eye]);
+		// Give an empty image to OpenGL ( the last "0" )
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		// Poor filtering. Needed !
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+
+		// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[eye], 0);
+
+		// Set the list of draw buffers.
+		// GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
+		// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 	}
 
 	OVR::Sizei OVRManager::getTextureSizei(){
