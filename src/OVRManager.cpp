@@ -206,10 +206,10 @@ namespace H3D {
 
 	void OVRManager::createRenderTexture(int width, int height, int samples){
 		// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-		glGenTextures(2, &oculusRiftTextureID[0]);
+		//glGenTextures(2, &oculusRiftTextureID[0]);
 		glGenTextures(2, &flippedRiftTextureID[0]);
 
-		glGenFramebuffers(2, &oculusFramebufferID[0]);
+		//glGenFramebuffers(2, &oculusFramebufferID[0]);
 		glGenFramebuffers(2, &flippedFramebufferID[0]);
 
 		glGenRenderbuffers(2, &oculusDepthbufferID[0]);
@@ -243,26 +243,26 @@ namespace H3D {
 
 
 
-			//Frame buffer to READ for blit at end (opengl has textures upside down)
-			//The final texture which will be blitted
-			glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[i]);
+			// //Frame buffer to READ for blit at end (opengl has textures upside down)
+			// //The final texture which will be blitted
+			// glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[i]);
 			
-			//Init output textures
-			// "Bind" the newly created texture : all future texture functions will modify this texture
-			glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[i]);
-			// Give an empty image to OpenGL ( the last "0" )
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-			// Poor filtering. Needed !
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			// //Init output textures
+			// // "Bind" the newly created texture : all future texture functions will modify this texture
+			// glBindTexture(GL_TEXTURE_2D, oculusRiftTextureID[i]);
+			// // Give an empty image to OpenGL ( the last "0" )
+			// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+			// // Poor filtering. Needed !
+			// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 
-			// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
-			glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[i], 0);
+			// // Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+			// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[i], 0);
 
-			// Set the list of draw buffers.
-			// GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
-			glDrawBuffers(1, DrawBuffers1); // "1" is the size of DrawBuffers
+			// // Set the list of draw buffers.
+			// // GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
+			// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
 			
 
@@ -307,6 +307,7 @@ namespace H3D {
 		// 	glEnd();
 		// }
 		//must convert to opengl texture pointer; hence &..[0].Texture
+		unbindBuffers();
 		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture);
 	}
 
