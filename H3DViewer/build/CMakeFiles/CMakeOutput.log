@@ -1,0 +1,243 @@
+The system is: Windows - 6.1 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler:  
+Build flags: 
+Id flags: 
+
+The output was:
+0
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:34 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdC\CompilerIdC.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "Debug\".
+InitializeBuildStatus:
+  Creating "Debug\CompilerIdC.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /nologo /W0 /WX- /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TC /errorReport:queue CMakeCCompilerId.c
+  CMakeCCompilerId.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdC.lib" /MACHINE:X64 Debug\CMakeCCompilerId.obj
+  CompilerIdC.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdC\.\CompilerIdC.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_C_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\cl.exe
+FinalizeBuildStatus:
+  Deleting file "Debug\CompilerIdC.unsuccessfulbuild".
+  Touching "Debug\CompilerIdC.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdC\CompilerIdC.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.52
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+
+The C compiler identification is MSVC, found in "C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/3.1.0-rc2/CompilerIdC/CompilerIdC.exe"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler:  
+Build flags: 
+Id flags: 
+
+The output was:
+0
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:35 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdCXX\CompilerIdCXX.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "Debug\".
+InitializeBuildStatus:
+  Creating "Debug\CompilerIdCXX.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /nologo /W0 /WX- /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /errorReport:queue CMakeCXXCompilerId.cpp
+  CMakeCXXCompilerId.cpp
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdCXX.lib" /MACHINE:X64 Debug\CMakeCXXCompilerId.obj
+  CompilerIdCXX.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdCXX\.\CompilerIdCXX.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_CXX_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\cl.exe
+FinalizeBuildStatus:
+  Deleting file "Debug\CompilerIdCXX.unsuccessfulbuild".
+  Touching "Debug\CompilerIdCXX.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\3.1.0-rc2\CompilerIdCXX\CompilerIdCXX.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.53
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+
+The CXX compiler identification is MSVC, found in "C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/3.1.0-rc2/CompilerIdCXX/CompilerIdCXX.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe" "cmTryCompileExec12691698.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=11.0"
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:35 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec12691698.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec12691698.dir\Debug\".
+  Creating directory "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec12691698.dir\Debug\cmTryCompileExec12691698.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec12691698.dir\Debug\\" /Fd"cmTryCompileExec12691698.dir\Debug\vc110.pdb" /Gd /TC /errorReport:queue C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\testCCompiler.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 17.00.50727.1 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec12691698.dir\Debug\\" /Fd"cmTryCompileExec12691698.dir\Debug\vc110.pdb" /Gd /TC /errorReport:queue C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\testCCompiler.c
+  
+  testCCompiler.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec12691698.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec12691698.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec12691698.lib" /MACHINE:X64  /machine:x64 /debug cmTryCompileExec12691698.dir\Debug\testCCompiler.obj
+  cmTryCompileExec12691698.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec12691698.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec12691698.dir\Debug\cmTryCompileExec12691698.unsuccessfulbuild".
+  Touching "cmTryCompileExec12691698.dir\Debug\cmTryCompileExec12691698.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec12691698.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.83
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe" "cmTryCompileExec236101581.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=11.0"
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:36 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec236101581.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec236101581.dir\Debug\".
+  Creating directory "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec236101581.dir\Debug\cmTryCompileExec236101581.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec236101581.dir\Debug\\" /Fd"cmTryCompileExec236101581.dir\Debug\vc110.pdb" /Gd /TC /errorReport:queue "C:\Program Files (x86)\CMake\share\cmake-3.1\Modules\CMakeCCompilerABI.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 17.00.50727.1 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec236101581.dir\Debug\\" /Fd"cmTryCompileExec236101581.dir\Debug\vc110.pdb" /Gd /TC /errorReport:queue "C:\Program Files (x86)\CMake\share\cmake-3.1\Modules\CMakeCCompilerABI.c"
+  
+  CMakeCCompilerABI.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec236101581.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec236101581.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec236101581.lib" /MACHINE:X64  /machine:x64 /debug cmTryCompileExec236101581.dir\Debug\CMakeCCompilerABI.obj
+  cmTryCompileExec236101581.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec236101581.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec236101581.dir\Debug\cmTryCompileExec236101581.unsuccessfulbuild".
+  Touching "cmTryCompileExec236101581.dir\Debug\cmTryCompileExec236101581.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec236101581.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe" "cmTryCompileExec1070537763.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=11.0"
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:37 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec1070537763.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1070537763.dir\Debug\".
+  Creating directory "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1070537763.dir\Debug\cmTryCompileExec1070537763.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTryCompileExec1070537763.dir\Debug\\" /Fd"cmTryCompileExec1070537763.dir\Debug\vc110.pdb" /Gd /TP /errorReport:queue C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\testCXXCompiler.cxx
+  Microsoft (R) C/C++ Optimizing Compiler Version 17.00.50727.1 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTryCompileExec1070537763.dir\Debug\\" /Fd"cmTryCompileExec1070537763.dir\Debug\vc110.pdb" /Gd /TP /errorReport:queue C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\testCXXCompiler.cxx
+  
+  testCXXCompiler.cxx
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1070537763.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1070537763.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1070537763.lib" /MACHINE:X64  /machine:x64 /debug cmTryCompileExec1070537763.dir\Debug\testCXXCompiler.obj
+  cmTryCompileExec1070537763.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1070537763.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1070537763.dir\Debug\cmTryCompileExec1070537763.unsuccessfulbuild".
+  Touching "cmTryCompileExec1070537763.dir\Debug\cmTryCompileExec1070537763.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec1070537763.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.60
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp
+
+Run Build Command:"C:/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe" "cmTryCompileExec3856454735.vcxproj" "/p:Configuration=Debug" "/p:VisualStudioVersion=11.0"
+Microsoft (R) Build Engine version 4.0.30319.18408
+[Microsoft .NET Framework, version 4.0.30319.18444]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 9/12/2014 1:07:38 PM.
+Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec3856454735.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3856454735.dir\Debug\".
+  Creating directory "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3856454735.dir\Debug\cmTryCompileExec3856454735.unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTryCompileExec3856454735.dir\Debug\\" /Fd"cmTryCompileExec3856454735.dir\Debug\vc110.pdb" /Gd /TP /errorReport:queue "C:\Program Files (x86)\CMake\share\cmake-3.1\Modules\CMakeCXXCompilerABI.cpp"
+  Microsoft (R) C/C++ Optimizing Compiler Version 17.00.50727.1 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTryCompileExec3856454735.dir\Debug\\" /Fd"cmTryCompileExec3856454735.dir\Debug\vc110.pdb" /Gd /TP /errorReport:queue "C:\Program Files (x86)\CMake\share\cmake-3.1\Modules\CMakeCXXCompilerABI.cpp"
+  
+  CMakeCXXCompilerABI.cpp
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:"C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3856454735.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3856454735.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/H3D/H3DAPI/H3DViewer/build/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3856454735.lib" /MACHINE:X64  /machine:x64 /debug cmTryCompileExec3856454735.dir\Debug\CMakeCXXCompilerABI.obj
+  cmTryCompileExec3856454735.vcxproj -> C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3856454735.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3856454735.dir\Debug\cmTryCompileExec3856454735.unsuccessfulbuild".
+  Touching "cmTryCompileExec3856454735.dir\Debug\cmTryCompileExec3856454735.lastbuildstate".
+Done Building Project "C:\H3D\H3DAPI\H3DViewer\build\CMakeFiles\CMakeTmp\cmTryCompileExec3856454735.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.57
+
+

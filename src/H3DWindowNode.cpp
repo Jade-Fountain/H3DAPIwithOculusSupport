@@ -292,8 +292,8 @@ void H3DWindowNode::initialize() {
   last_render_mode = renderMode->getRenderMode();
 
  // if( stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
-    bool separateEyeTex = true;
-    ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC(), separateEyeTex);
+  bool separateEyeTex = true;
+  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC(), separateEyeTex);
   // }
 
 }
@@ -872,12 +872,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   H3DFloat focal_distance = 0.6f;
 
   StereoInfo *stereo_info = StereoInfo::getActive();
-  if( stereo_info ) {
-    if (ovrManager->ovrHMDPresent && stereo_mode == RenderMode::OCULUS_RIFT) {
-      //Get IPD, FOV, pose, etc
-      // ovrManager->getHMDInfo(stereo_info);
-    }
-  }
+  
   // Console(4) << ovrManager->getConsoletext() << std::endl;
 
 
@@ -949,7 +944,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      ovrManager->setProjectionMatrix(eye_mode);     
+      ovrManager->setProjectionMatrix(eye_mode);          
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,
@@ -1077,7 +1072,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
     if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
-      ovrManager->setProjectionMatrix(eye_mode);
+      ovrManager->setProjectionMatrix(eye_mode);    
     } else {
       vp->setupProjection( eye_mode,
                            projection_width,

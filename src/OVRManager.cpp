@@ -350,6 +350,10 @@ namespace H3D {
 		float far_distance = 100.0f;
 		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
 		glMultMatrixf(getColumnMajorRepresentation(proj));
+
+		//for some reason the eye textures are inverted. this fixes that. it would be good to figure out why
+      	glScalef( 1, -1, 1 );
+      	glFrontFace( GL_CW );  
 	}
 
 	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
