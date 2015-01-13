@@ -136,31 +136,40 @@ namespace H3D {
 		OVR::Sizei recommenedTexSize_Left = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
 		OVR::Sizei recommenedTexSize_Right = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
 
+		//Multisampling 
+		const int eyeRenderMultisample = 1;
+
 		if(separateEyeTextures){
-			//Viewports info
+			//Use one texture per eye for rendering prior to distortion
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
 			eyeViewports[ovrEye_Left].Size = recommenedTexSize_Left;
 			eyeViewports[ovrEye_Right].Pos = OVR::Vector2i(0, 0);
 			eyeViewports[ovrEye_Right].Size = recommenedTexSize_Right;
+
+			genBufferIDs(2);
+			createRenderTextureForEye(eyeViewports[ovrEye_Left].Size.w, eyeViewports[ovrEye_Left].Size.h, eyeRenderMultisample, ovrEye_Left);			
+			createRenderTextureForEye(eyeViewports[ovrEye_Right].Size.w, eyeViewports[ovrEye_Right].Size.h, eyeRenderMultisample, ovrEye_Right);
 		} else {
+			//Use one texture for both eyes for rendering prior to distortion
 			Sizei renderTarget;
 			renderTarget.w = recommenedTexSize_Left.w + recommenedTexSize_Right.w;	
 			//renderTarget height is max of the left and right eye texture heights		
 			renderTarget.h = (int(recommenedTexSize_Left.h)>int(recommenedTexSize_Right.h)) ? int(recommenedTexSize_Left.h) : int(recommenedTexSize_Right.h);
-			//Viewports info
+
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
 			eyeViewports[ovrEye_Left].Size = OVR::Sizei((renderTarget.w + 1) / 2, renderTarget.h); 
 			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTarget.w / 2, 0);
 			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
+
+			genBufferIDs(1);
+			createRenderTextureForEye(renderTarget.w, renderTarget.h, eyeRenderMultisample, ovrEye_Left);
 		}
-		
-		const int eyeRenderMultisample = 1;
+
 		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
 
 		//The actual RT size may be different due to HW limits.
-		//TODO
-		renderTargetSize = getTextureSizei();
-
+		//TODO: use eye viewport stuff
+		// renderTargetSize = getTextureSizei();
 
 		// Configure OpenGL.
 		ovrGLConfig cfg;
@@ -178,78 +187,55 @@ namespace H3D {
 		ovrHMDPresent = success;
 
 		//unbind
-		unbindBuffers();		
+		unbindBuffers();
 	}
 
-	void OVRManager::createRenderTexture(int width, int height, int samples){
-		// The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-		if(separateEyeTextures){ 
-			glGenTextures(2, &oculusRiftTextureID[0]);
-			glGenTextures(2, &flippedRiftTextureID[0]);
+	void OVRManager::genBufferIDs(int number_of_buffers){
+		glGenTextures(number_of_buffers, &oculusRiftTextureID[0]);
+		glGenTextures(number_of_buffers, &flippedRiftTextureID[0]);
 
-			glGenFramebuffers(2, &oculusFramebufferID[0]);
-			glGenFramebuffers(2, &flippedFramebufferID[0]);
+		glGenFramebuffers(number_of_buffers, &oculusFramebufferID[0]);
+		glGenFramebuffers(number_of_buffers, &flippedFramebufferID[0]);
 
-			glGenRenderbuffers(2, &oculusDepthbufferID[0]);
+		glGenRenderbuffers(number_of_buffers, &oculusDepthbufferID[0]);
 
-			// The texture we're going to render to
-			
-			for (int eye = 0; eye < 2 ; eye++){
-				createRenderTextureForEye(width, height, samples, eye);
-			}
-		
-		} else {
-			glGenTextures(1, &oculusRiftTextureID[0]);
-			glGenTextures(1, &flippedRiftTextureID[0]);
-
-			glGenFramebuffers(1, &oculusFramebufferID[0]);
-			glGenFramebuffers(1, &flippedFramebufferID[0]);
-
-			glGenRenderbuffers(1, &oculusDepthbufferID[0]);
-
-			oculusRiftTextureID[1] = oculusRiftTextureID[0]; //Single texture per eye
+		if( number_of_buffers == 1 ){
+			//Single texture per eye
+			oculusRiftTextureID[1] = oculusRiftTextureID[0]; 
 			flippedRiftTextureID[1] = flippedRiftTextureID[0];
 			oculusFramebufferID[1] = oculusFramebufferID[0];
 			flippedFramebufferID[1] = flippedFramebufferID[0];
-			oculusDepthbufferID[1] = oculusDepthbufferID[0];
-			
-			createRenderTextureForEye(width, height, samples, 0);
+			oculusDepthbufferID[1] = oculusDepthbufferID[0];		
 		}
-			
-		// Always check that our framebuffer is ok
-		// if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		// return false;
 	}
 
-	void OVRManager::createRenderTextureForEye(int width, int height, int samples, int eye){
-		//Frame buffer to READ for blit at end (opengl has textures upside down)
-		//glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
-		//The final texture which will be blitted
-		glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
-		//Init backbuffer flipped textures
-		// "Bind" the newly created texture : all future texture functions will modify this texture
-		glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
-		// Give an empty image to OpenGL ( the last "0" )
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-		// Poor filtering. Needed !
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		// The depth buffer
-		glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[eye]);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[eye]);
+	void OVRManager::createRenderTextureForEye(int width, int height, int eye){
+		
+//TODO DELETE ONCE WORKING:
+		// // //glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
+		// glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
+		// //Init backbuffer flipped textures
+		// // "Bind" the newly created texture : all future texture functions will modify this texture
+		// glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
+		// // Give an empty image to OpenGL ( the last "0" )
+		// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+		// // Poor filtering. Needed !
+		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		// // The depth buffer
+		// glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[eye]);
+		// glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+		// glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[eye]);
 
-		// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[eye], 0);
-		// Set the list of draw buffers.
-		// GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-		// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+		// // Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+		// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[eye], 0);
+		// // Set the list of draw buffers.
+		// // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+		// // glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+//ENDTODO
 
 
-
-
-		//Frame buffer to READ for blit at end (opengl has textures upside down)
-		//The final texture which will be blitted
+		//The texture which will be drawn to
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 		
 		//Init output textures
@@ -261,8 +247,12 @@ namespace H3D {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+		// The depth buffer
+		glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[eye]);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[eye]);
 
-		// Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
+		// Set "oculusRiftTextureID" as our colour attachement #0
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[eye], 0);
 
 		// Set the list of draw buffers.
@@ -279,32 +269,10 @@ namespace H3D {
 	}
 
 	void OVRManager::startFrame(){
-		// ovrFrameTiming hmdFrameTiming =
 		ovrHmd_BeginFrame(hmd, 0);
 	}
 
 	void OVRManager::endFrame(){
-		// for (int eye = 0; eye < 2 ; eye++){
-		// 	//Set up orthogonal clip space
-		// 	glMatrixMode(GL_PROJECTION);
-		// 	glLoadIdentity();
-		// 	glMatrixMode(GL_MODELVIEW);
-		// 	glLoadIdentity();
-		// 	glViewport( eyeViewports[eye].Pos.x, eyeViewports[eye].Pos.y, 
-		// 			eyeViewports[eye].Pos.x + eyeViewports[eye].Size.w, eyeViewports[eye].Pos.y + eyeViewports[eye].Size.h );
-		// 	//Bind framebuffer
-		// 	glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
-			
-		// 	//Draw texture upside down on a quad
-		// 	glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
-		// 	glBegin(GL_QUADS);
-		// 	glTexCoord2f(1,0); glVertex3f(1,1,-1);
-		// 	glTexCoord2f(1,1); glVertex3f(1,-1,-1);
-		// 	glTexCoord2f(0,1); glVertex3f(-1,-1,-1);
-		// 	glTexCoord2f(0,0); glVertex3f(-1,1,-1);
-		// 	glEnd();
-		// }
-		//must convert to opengl texture pointer; hence &..[0].Texture
 		unbindBuffers();
 		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture);
 	}
@@ -317,7 +285,9 @@ namespace H3D {
 		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
 		glMultMatrixf(getColumnMajorRepresentation(proj));
 
-		//for some reason the eye textures are inverted. this fixes that. it would be good to figure out why
+		// For some reason the eye textures are inverted between drawing to oculusRiftEyeTexture and the screen. It would be good to figure out why
+		// The health warning is the correct way up. 
+		// This flips clips space and tells open gl that the polygons are now coiled clockwise
       	glScalef( 1, -1, 1 );
       	glFrontFace( GL_CW );  
 	}
@@ -349,10 +319,6 @@ namespace H3D {
 		eyeTextures[eye].Texture.Header.TextureSize = renderTargetSize;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
-		//glBindTexture(GL_TEXTURE_2D, flippedFramebufferID[eye]);
-		
-		//if(flipShaderLoaded)
-		// glUseProgram(flipTextureYShaderProgram);
 	}
 
 	void OVRManager::unbindBuffers(){
