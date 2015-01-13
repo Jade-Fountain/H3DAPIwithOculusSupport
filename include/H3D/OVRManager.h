@@ -58,7 +58,7 @@ namespace H3D {
 
 		bool checkHealthWarningState();
 
-		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_);
+		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_ = true);
 
 		void createRenderTexture(int width, int height, int samples);
 

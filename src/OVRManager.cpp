@@ -343,7 +343,7 @@ namespace H3D {
 		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture);
 	}
 
-	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode){
+	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode) {
 		//TODO: customize eye render order
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		float near_distance = 0.001f;

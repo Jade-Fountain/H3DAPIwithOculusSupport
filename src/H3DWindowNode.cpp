@@ -291,9 +291,8 @@ void H3DWindowNode::initialize() {
   Node::initialize();
   last_render_mode = renderMode->getRenderMode();
 
- // if( stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
-  bool separateEyeTex = true;
-  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC(), separateEyeTex);
+ // if( stereo_mode == RenderMode::OCULUS_RIFT ){
+  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
   // }
 
 }
@@ -657,7 +656,20 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
 
-  if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
+  if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent){
+    //TODO: display error message
+    
+    //Attempt to find rift
+    ovrManager->initialise();
+    ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
+
+    //No rift present, fix to mono mode
+    if(!ovrManager->ovrHMDPresent){
+      stereo_mode = RenderMode::MONO;
+    }
+  }
+
+  if(stereo_mode == RenderMode::OCULUS_RIFT ){
 	  ovrManager->startFrame();
   }
 
@@ -943,7 +955,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     // X3DViewpointNode.
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->setProjectionMatrix(eye_mode);          
     } else {
       vp->setupProjection( eye_mode,
@@ -952,7 +964,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            clip_near, clip_far,
                            stereo_info );
     }
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->drawBuffer(eye_mode);
     } else {
       glDrawBuffer(GL_BACK_LEFT);
@@ -999,7 +1011,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT ){
       ovrManager->setViewport(eye_mode);
     }
     // clear the buffers before rendering
@@ -1024,7 +1036,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     // add viewmatrix to model view matrix.
 
     //Oculus: IPD used here:
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->setViewMatrix(eye_mode);
     } else {
       vp->setupViewMatrix( eye_mode,
@@ -1071,7 +1083,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glFrontFace( GL_CCW );
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->setProjectionMatrix(eye_mode);    
     } else {
       vp->setupProjection( eye_mode,
@@ -1081,7 +1093,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
                            stereo_info );
     }
     
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->drawBuffer(eye_mode);
       // clear the buffers before rendering
       if(ovrManager->separateEyeTextures){
@@ -1124,7 +1136,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::NVIDIA_3DVISION  ) {
       glViewport( width->getValue(), 0, 
                   width->getValue(), height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
+    } else if (stereo_mode == RenderMode::OCULUS_RIFT ){
       ovrManager->setViewport(eye_mode);
     }
 
@@ -1146,7 +1158,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
 
     // add viewmatrix to model view matrix.
-    if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent){
+    if(stereo_mode == RenderMode::OCULUS_RIFT){
       ovrManager->setViewMatrix(eye_mode);
     } else {
       vp->setupViewMatrix( eye_mode,
@@ -1497,7 +1509,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     X3DLightNode::decreaseLightIndex();
   }
 
-  if(stereo_mode == RenderMode::OCULUS_RIFT && ovrManager->ovrHMDPresent ){
+  if(stereo_mode == RenderMode::OCULUS_RIFT ){
 	 ovrManager->endFrame();
   }
 }
