@@ -41,7 +41,6 @@ namespace H3D {
 
 	class OVRManager {
 	public:
-		bool ovrHMDPresent;
 		bool separateEyeTextures;
 
 		OVRManager() : ovrHMDPresent(false),
@@ -50,6 +49,9 @@ namespace H3D {
 					   renderTargetSize(){}
 
 		void initialise();
+
+		bool ovrHMDPresent();
+		
 		void destroy();
 
 		void createShaders();		

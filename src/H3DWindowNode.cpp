@@ -656,7 +656,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
 
-  if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent){
+  if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent()){
     //TODO: display error message
     
     //Attempt to find rift
@@ -664,7 +664,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
 
     //No rift present, fix to mono mode
-    if(!ovrManager->ovrHMDPresent){
+    if(!ovrManager->ovrHMDPresent()){
       stereo_mode = RenderMode::MONO;
     }
   }

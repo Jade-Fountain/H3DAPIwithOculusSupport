@@ -43,19 +43,22 @@ namespace H3D {
 
 
 	void OVRManager::initialise(){
-		std::cerr << "Initialising Oculus Rift...";
+
 		ovr_Initialize();
+
+		//Create head mounted display object
 		hmd = ovrHmd_Create(0);
 		if (hmd)
 		{
-			ovrHMDPresent = true;
 			// Start the sensor which provides the Rift’s pose and motion.
-			bool tracking_initialised = ovrHmd_ConfigureTracking(hmd, ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0);
-			console << "Rift Found!" << std::endl;
-		} else {
-			ovrHMDPresent = false;
-			console << "Rift NOT Found." << std::endl;
+			bool tracking_initialised = ovrHmd_ConfigureTracking(hmd, 
+																hmd->TrackingCaps, //Set tracking capabilities 
+																0); //Do not require tracking
 		}
+	}
+
+	bool OVRManager::ovrHMDPresent(){
+		return bool(hmd);
 	}
 
 	void OVRManager::destroy(){
@@ -63,62 +66,10 @@ namespace H3D {
 		ovr_Shutdown();
 	}
 
-	void OVRManager::createShaders(){
-		const GLchar * vertexShaderSource[] = { "void main(){}" };
-		const GLchar * fragmentShaderSource[] = {"void main(){gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);}"};
-		GLuint flipVertexShaderObjectID = glCreateShader(GL_VERTEX_SHADER);
-		GLuint flipFragmentShaderObjectID = glCreateShader(GL_FRAGMENT_SHADER);
-		glShaderSource(flipVertexShaderObjectID, 1, vertexShaderSource, NULL);
-		glCompileShader(flipVertexShaderObjectID);
-		glShaderSource(flipFragmentShaderObjectID, 1, fragmentShaderSource, NULL);
-		glCompileShader(flipFragmentShaderObjectID);
-
-		GLint vcompiled(0), fcompiled(0), linked(0);
-
-	 	glGetShaderiv(flipVertexShaderObjectID, GL_COMPILE_STATUS, &vcompiled);
-		glGetShaderiv(flipFragmentShaderObjectID, GL_COMPILE_STATUS, &fcompiled);
-
-		//Beep(500,1000); Sleep(1000);
-
-		if(bool(vcompiled) && bool(fcompiled)){
-			flipTextureYShaderProgram = glCreateProgram();
-
-			glAttachShader(flipTextureYShaderProgram, flipVertexShaderObjectID);
-			glAttachShader(flipTextureYShaderProgram, flipFragmentShaderObjectID);
-
-			glLinkProgram(flipTextureYShaderProgram);     
-
-			glGetProgramiv(flipTextureYShaderProgram, GL_LINK_STATUS, &linked);
-			// Beep(500,1000); Sleep(1000);
-		}
-		//delete[] vertexShaderSource;
-		//delete[] fragmentShaderSource;
-
- 		
- 		flipShaderLoaded = bool(linked);
-		if (linked == 0) {
-			// Beep(500,1000);
-		}
-	}
-
-
-	ovrPoseStatef OVRManager::getPoseOfHMD(){
-		// Query the HMD for the current tracking state.
-		console << "Getting OR Pose" << std::endl;
-		ovrTrackingState tracking_state = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
-		if (tracking_state.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked))
-		{
-			ovrPoseStatef pose = tracking_state.HeadPose;
-			return pose;
-		}
-		return ovrPoseStatef();		
-	}
-
 	void OVRManager::dismissHealthWarning(){
+		//Health and Saftey Warning Display State
 		ovrHSWDisplayState hswDisplayState;
 		ovrHmd_GetHSWDisplayState(hmd, &hswDisplayState);
-		// Dismiss the warning if the user pressed the appropriate key or if the user
-		// is tapping the side of the hmd.
 		if (hswDisplayState.Displayed)
 		{
 			ovrHmd_DismissHSWDisplay(hmd);
@@ -126,73 +77,89 @@ namespace H3D {
 	}
 
 	bool OVRManager::checkHealthWarningState(){
-		// Health and Safety Warning display state.
+		//Health and Saftey Warning Display State
 		ovrHSWDisplayState hswDisplayState;
 		ovrHmd_GetHSWDisplayState(hmd, &hswDisplayState);
 		// Dismiss the warning if the user pressed the appropriate key or if the user
 		// is tapping the side of the hmd.
 		if (hswDisplayState.Displayed)
 		{
-			// If the user has requested to dismiss the warning via keyboard or controller input...
+			//If the warning is still displayed, check for triggers to disable
 
 			//TODO: add key presses to turn off health and safety warning
+			// If the user has requested to dismiss the warning via keyboard or controller input...
 			// if (Util_GetAndResetHSWDismissedState()){
 			// 	ovrHmd_DismissHSWDisplay(hmd);
 			// 	return false;
 			// }
 			// else
+			//End TODO
 		
 			// Detect a moderate tap on the side of the hmd.
 			ovrTrackingState ts = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
 			if (ts.StatusFlags & ovrStatus_OrientationTracked)
 			{
+
 				const OVR::Vector3f v(ts.RawSensorData.Accelerometer.x,
-				ts.RawSensorData.Accelerometer.y,
-				ts.RawSensorData.Accelerometer.z);
+									  ts.RawSensorData.Accelerometer.y,
+									  ts.RawSensorData.Accelerometer.z);
+
 				// Arbitrary value and representing moderate tap on the side of the DK2 Rift.
 				if (v.LengthSq() > 250.f) {
 					ovrHmd_DismissHSWDisplay(hmd);
+					//The HSW is not displayed
 					return false;
 				}
+
 			}
+			//The HSW is still displayed
 			return true;
 		}
+		//The HSW is not displayed
 		return false;
 	}
 
 	void OVRManager::configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_){
+		//Break if HMD not initialised
 		if(!hmd) return;
+
+		//Set number of eye textures
 		separateEyeTextures = separateEyeTextures_;
+
+		//Set window for ovr to draw to
 		ovrHmd_AttachToWindow(hmd, window, NULL, NULL);
+
+		//Set capabilities of HMD
 		ovrHmd_SetEnabledCaps(hmd, hmd->HmdCaps);
 
-		//Configure Stereo settings.
-		OVR::Sizei recommenedTex0Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
-		OVR::Sizei recommenedTex1Size = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
+		//Configure texture sizes for each eye.
+		OVR::Sizei recommenedTexSize_Left = ovrHmd_GetFovTextureSize(hmd, ovrEye_Left, hmd->DefaultEyeFov[0], 1.0f);
+		OVR::Sizei recommenedTexSize_Right = ovrHmd_GetFovTextureSize(hmd, ovrEye_Right, hmd->DefaultEyeFov[1], 1.0f);
 
 		if(separateEyeTextures){
-			renderTargetSize.w = (recommenedTex0Size.w + recommenedTex1Size.w) / 2;
-			renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
 			//Viewports info
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-			eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTargetSize.w, renderTargetSize.h); 
-			eyeViewports[ovrEye_Right].Pos = eyeViewports[ovrEye_Left].Pos;
-			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
+			eyeViewports[ovrEye_Left].Size = recommenedTexSize_Left;
+			eyeViewports[ovrEye_Right].Pos = OVR::Vector2i(0, 0);
+			eyeViewports[ovrEye_Right].Size = recommenedTexSize_Right;
 		} else {
-			renderTargetSize.w = recommenedTex0Size.w + recommenedTex1Size.w;			
-			renderTargetSize.h = (int(recommenedTex0Size.h)>int(recommenedTex1Size.h)) ? int(recommenedTex0Size.h) : int(recommenedTex1Size.h);
+			Sizei renderTarget;
+			renderTarget.w = recommenedTexSize_Left.w + recommenedTexSize_Right.w;	
+			//renderTarget height is max of the left and right eye texture heights		
+			renderTarget.h = (int(recommenedTexSize_Left.h)>int(recommenedTexSize_Right.h)) ? int(recommenedTexSize_Left.h) : int(recommenedTexSize_Right.h);
 			//Viewports info
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-			eyeViewports[ovrEye_Left].Size = OVR::Sizei((renderTargetSize.w + 1) / 2, renderTargetSize.h); 
-			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTargetSize.w / 2, 0);
+			eyeViewports[ovrEye_Left].Size = OVR::Sizei((renderTarget.w + 1) / 2, renderTarget.h); 
+			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTarget.w / 2, 0);
 			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 		}
+		
 		const int eyeRenderMultisample = 1;
 		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
-		// pRendertargetTexture = pRender->CreateTexture(Texture_RGBA | Texture_RenderTarget | eyeRenderMultisample, renderTargetSize.w, renderTargetSize.h, NULL);
+
 		//The actual RT size may be different due to HW limits.
 		//TODO
-		//renderTargetSize = getTextureSizei();
+		renderTargetSize = getTextureSizei();
 
 
 		// Configure OpenGL.
@@ -210,7 +177,6 @@ namespace H3D {
 		ovrBool success = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
 		ovrHMDPresent = success;
 
-		createShaders();
 		//unbind
 		unbindBuffers();		
 	}
@@ -420,12 +386,4 @@ namespace H3D {
 	   	}
 		return s.str();
 	} 
-
-	std::string OVRManager::getConsoletext(){
-		std::string s = console.str();
-		console.str(std::string()); //Clear stream
-		return s;
-	}
-
-
 }
