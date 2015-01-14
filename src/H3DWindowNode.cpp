@@ -875,9 +875,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   H3DFloat focal_distance = 0.6f;
 
   StereoInfo *stereo_info = StereoInfo::getActive();
-  
-  // Console(4) << ovrManager->getConsoletext() << std::endl;
-
 
   bool mirror_in_y = mirrored->getValue();
 
@@ -1290,6 +1287,8 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glGetDoublev( GL_MODELVIEW_MATRIX, mono_mvmatrix );
       glPopMatrix();
     }
+
+
   } else {
     // MONO
     clipDistances->setValue( Vec2f(clip_near, clip_far), id );
@@ -1501,7 +1500,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   }
 
   if(stereo_mode == RenderMode::OCULUS_RIFT ){
-	 ovrManager->endFrame();
+    ovrManager->endFrame();
   }
 }
 
