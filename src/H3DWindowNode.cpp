@@ -291,9 +291,7 @@ void H3DWindowNode::initialize() {
   Node::initialize();
   last_render_mode = renderMode->getRenderMode();
 
- // if( stereo_mode == RenderMode::OCULUS_RIFT ){
   ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
-  // }
 
 }
 

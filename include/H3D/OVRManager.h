@@ -43,10 +43,10 @@ namespace H3D {
 	public:
 		bool separateEyeTextures;
 
-		OVRManager() : ovrHMDPresent(false),
-					   flipShaderLoaded(false),
-					   separateEyeTextures(false),
-					   renderTargetSize(){}
+		OVRManager() : separateEyeTextures(true),
+					   renderTargetSize(),
+					   near_distance(0.001f),
+					   far_distance(100.0f){}
 
 		void initialise();
 
@@ -62,9 +62,9 @@ namespace H3D {
 
 		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_ = true);
 
-		void createRenderTexture(int width, int height, int samples);
+		void genBufferIDs(int number_of_buffers);
 
-		void createRenderTextureForEye(int width, int height, int samples, int eye);
+		void createRenderTextureForEye(int width, int height, int eye);
 
 		OVR::Sizei getTextureSizei();
 		
@@ -84,9 +84,10 @@ namespace H3D {
 
 		std::string getConsoletext();
 
-	private:		
+		const float near_distance;
+		const float far_distance;
 
-		std::stringstream console;
+	private:		
 
 		ovrHmd hmd;
 
@@ -98,12 +99,7 @@ namespace H3D {
 
 		GLuint oculusRiftTextureID[2];
 		GLuint oculusFramebufferID[2];
-		GLuint flippedRiftTextureID[2];
-		GLuint flippedFramebufferID[2];
 		GLuint oculusDepthbufferID[2];
-
-		GLuint flipTextureYShaderProgram;
-		bool flipShaderLoaded;
 
 		ovrPoseStatef getPoseOfHMD();
 

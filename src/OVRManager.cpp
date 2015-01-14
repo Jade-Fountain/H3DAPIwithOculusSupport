@@ -40,6 +40,8 @@ namespace H3D {
 	using H3DUtil::ArithmeticTypes::Quaternion;
 	using H3DUtil::ArithmeticTypes::Rotation;
 	using H3D::X3DViewpointNode;
+	
+	using OVR::Sizei;
 
 
 	void OVRManager::initialise(){
@@ -147,8 +149,17 @@ namespace H3D {
 			eyeViewports[ovrEye_Right].Size = recommenedTexSize_Right;
 
 			genBufferIDs(2);
-			createRenderTextureForEye(eyeViewports[ovrEye_Left].Size.w, eyeViewports[ovrEye_Left].Size.h, eyeRenderMultisample, ovrEye_Left);			
-			createRenderTextureForEye(eyeViewports[ovrEye_Right].Size.w, eyeViewports[ovrEye_Right].Size.h, eyeRenderMultisample, ovrEye_Right);
+			createRenderTextureForEye(eyeViewports[ovrEye_Left].Size.w, eyeViewports[ovrEye_Left].Size.h, ovrEye_Left);			
+			//TODO:The actual RT size may be different due to HW limits.
+			//checkViewport(eyeViewports[ovrEye_Left]);
+			//finally, unbind
+			
+			createRenderTextureForEye(eyeViewports[ovrEye_Right].Size.w, eyeViewports[ovrEye_Right].Size.h, ovrEye_Right);
+			//TODO:The actual RT size may be different due to HW limits.
+			//checkViewport(eyeViewports[ovrEye_Right]);
+			//finally, unbind
+			unbindBuffers();
+
 		} else {
 			//Use one texture for both eyes for rendering prior to distortion
 			Sizei renderTarget;
@@ -162,14 +173,12 @@ namespace H3D {
 			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
 			genBufferIDs(1);
-			createRenderTextureForEye(renderTarget.w, renderTarget.h, eyeRenderMultisample, ovrEye_Left);
+			createRenderTextureForEye(renderTarget.w, renderTarget.h, ovrEye_Left);
+			//TODO:The actual RT size may be different due to HW limits.
+			//checkViewport(eyeViewports[ovrEye_Left]);
+			//finally, unbind
+			unbindBuffers();
 		}
-
-		createRenderTexture(renderTargetSize.w, renderTargetSize.h, eyeRenderMultisample);
-
-		//The actual RT size may be different due to HW limits.
-		//TODO: use eye viewport stuff
-		// renderTargetSize = getTextureSizei();
 
 		// Configure OpenGL.
 		ovrGLConfig cfg;
@@ -184,27 +193,20 @@ namespace H3D {
 		cfg.OGL.Window = window;
 		cfg.OGL.DC = hdc;
 		ovrBool success = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
-		ovrHMDPresent = success;
 
-		//unbind
-		unbindBuffers();
 	}
 
 	void OVRManager::genBufferIDs(int number_of_buffers){
 		glGenTextures(number_of_buffers, &oculusRiftTextureID[0]);
-		glGenTextures(number_of_buffers, &flippedRiftTextureID[0]);
 
 		glGenFramebuffers(number_of_buffers, &oculusFramebufferID[0]);
-		glGenFramebuffers(number_of_buffers, &flippedFramebufferID[0]);
 
 		glGenRenderbuffers(number_of_buffers, &oculusDepthbufferID[0]);
 
 		if( number_of_buffers == 1 ){
 			//Single texture per eye
 			oculusRiftTextureID[1] = oculusRiftTextureID[0]; 
-			flippedRiftTextureID[1] = flippedRiftTextureID[0];
 			oculusFramebufferID[1] = oculusFramebufferID[0];
-			flippedFramebufferID[1] = flippedFramebufferID[0];
 			oculusDepthbufferID[1] = oculusDepthbufferID[0];		
 		}
 	}
@@ -278,10 +280,7 @@ namespace H3D {
 	}
 
 	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode) {
-		//TODO: customize eye render order
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		float near_distance = 0.001f;
-		float far_distance = 100.0f;
 		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
 		glMultMatrixf(getColumnMajorRepresentation(proj));
 
@@ -313,12 +312,12 @@ namespace H3D {
 		eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
 		eyeTextures[eye].OGL.Header.RenderViewport = eyeViewports[eye];
 		eyeTextures[eye].OGL.Header.TextureSize = renderTargetSize;
-		eyeTextures[eye].OGL.TexId = flippedRiftTextureID[eye];
+		eyeTextures[eye].OGL.TexId = oculusRiftTextureID[eye];
 		eyeTextures[eye].Texture.Header.API = ovrRenderAPI_OpenGL;
 		eyeTextures[eye].Texture.Header.RenderViewport = eyeViewports[eye];
 		eyeTextures[eye].Texture.Header.TextureSize = renderTargetSize;
 
-		glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
+		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 	}
 
 	void OVRManager::unbindBuffers(){
@@ -341,15 +340,4 @@ namespace H3D {
 						m.M[0][3], m.M[1][3], m.M[2][3], m.M[3][3] };
 		return M;
 	}
-
-	std::string OVRManager::getString(OVR::Matrix4f m){
-	   	std::stringstream s;
-	   	for (int i = 0; i < 4 ;i ++){
-	   		for (int j = 0; j < 4 ;j ++){
-	   			s << m.M[j][i];
-	   		}
-	   		s << std::endl;
-	   	}
-		return s.str();
-	} 
 }
