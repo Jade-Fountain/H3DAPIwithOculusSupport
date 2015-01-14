@@ -140,13 +140,18 @@ namespace H3D {
 
 		//Multisampling 
 		const int eyeRenderMultisample = 1;
-
+		
+		Sizei renderTarget[2] = { recommenedTexSize_Left, recommenedTexSize_Right};
 		if(separateEyeTextures){
 			//Use one texture per eye for rendering prior to distortion
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
 			eyeViewports[ovrEye_Left].Size = recommenedTexSize_Left;
 			eyeViewports[ovrEye_Right].Pos = OVR::Vector2i(0, 0);
 			eyeViewports[ovrEye_Right].Size = recommenedTexSize_Right;
+
+			//Store render target sizes for later configuration
+			renderTarget[ovrEye_Left] = eyeViewports[ovrEye_Left].Size;
+			renderTarget[ovrEye_Right] = eyeViewports[ovrEye_Right].Size;
 
 			genBufferIDs(2);
 			createRenderTextureForEye(eyeViewports[ovrEye_Left].Size.w, eyeViewports[ovrEye_Left].Size.h, ovrEye_Left);			
@@ -162,18 +167,19 @@ namespace H3D {
 
 		} else {
 			//Use one texture for both eyes for rendering prior to distortion
-			Sizei renderTarget;
-			renderTarget.w = recommenedTexSize_Left.w + recommenedTexSize_Right.w;	
+			renderTarget[ovrEye_Left].w = recommenedTexSize_Left.w + recommenedTexSize_Right.w;	
 			//renderTarget height is max of the left and right eye texture heights		
-			renderTarget.h = (int(recommenedTexSize_Left.h)>int(recommenedTexSize_Right.h)) ? int(recommenedTexSize_Left.h) : int(recommenedTexSize_Right.h);
+			renderTarget[ovrEye_Right].h = (int(recommenedTexSize_Left.h)>int(recommenedTexSize_Right.h)) ? int(recommenedTexSize_Left.h) : int(recommenedTexSize_Right.h);
+			//Both render target textures are the same size as they are the same texture
+			renderTarget[ovrEye_Right] = renderTarget[ovrEye_Left];
 
 			eyeViewports[ovrEye_Left].Pos = OVR::Vector2i(0, 0);
-			eyeViewports[ovrEye_Left].Size = OVR::Sizei((renderTarget.w + 1) / 2, renderTarget.h); 
-			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTarget.w / 2, 0);
+			eyeViewports[ovrEye_Left].Size = OVR::Sizei(renderTarget[ovrEye_Left].w / 2, renderTarget[ovrEye_Left].h); 
+			eyeViewports[ovrEye_Right].Pos =  OVR::Vector2i(renderTarget[ovrEye_Left].w / 2, 0);
 			eyeViewports[ovrEye_Right].Size = eyeViewports[ovrEye_Left].Size;
 
 			genBufferIDs(1);
-			createRenderTextureForEye(renderTarget.w, renderTarget.h, ovrEye_Left);
+			createRenderTextureForEye(renderTarget[ovrEye_Left].w, renderTarget[ovrEye_Left].h, ovrEye_Left);
 			//TODO:The actual RT size may be different due to HW limits.
 			//checkViewport(eyeViewports[ovrEye_Left]);
 			//finally, unbind
@@ -181,13 +187,11 @@ namespace H3D {
 		}
 
 		for (int eye = 0; eye < 2; eye++ ){
+			//Render texture info for rendering and distortion
 			eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
 			eyeTextures[eye].OGL.Header.RenderViewport = eyeViewports[eye];
-			eyeTextures[eye].OGL.Header.TextureSize = eyeViewports[eye].Size;
+			eyeTextures[eye].OGL.Header.TextureSize = renderTarget[eye];
 			eyeTextures[eye].OGL.TexId = oculusRiftTextureID[eye];
-			eyeTextures[eye].Texture.Header.API = ovrRenderAPI_OpenGL;
-			eyeTextures[eye].Texture.Header.RenderViewport = eyeViewports[eye];
-			eyeTextures[eye].Texture.Header.TextureSize = eyeViewports[eye].Size;
 		}
 
 		// Configure OpenGL.
@@ -197,11 +201,9 @@ namespace H3D {
 		cfg.OGL.Header.API = ovrRenderAPI_OpenGL;
 		cfg.OGL.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
 		cfg.OGL.Header.Multisample = backBufferMultisample;
-		cfg.Config.Header.API = ovrRenderAPI_OpenGL;
-		cfg.Config.Header.BackBufferSize = OVR::Sizei(hmd->Resolution.w, hmd->Resolution.h);
-		cfg.Config.Header.Multisample = backBufferMultisample;
 		cfg.OGL.Window = window;
 		cfg.OGL.DC = hdc;
+		
 		ovrBool success = ovrHmd_ConfigureRendering(hmd, &cfg.Config, hmd->DistortionCaps, hmd->DefaultEyeFov, EyeRenderDesc);
 
 	}
@@ -281,13 +283,7 @@ namespace H3D {
 	}
 
 	void OVRManager::startFrame(){
-		ovrHmd_BeginFrame(hmd, 0);
-
-		//Is this introducing latency?
-		
-		headPoses[ovrEye_Left] = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Left);
-		headPoses[ovrEye_Right] = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Right);
-		
+		ovrHmd_BeginFrame(hmd, 0);		
 	}
 
 	void OVRManager::endFrame(){
@@ -309,6 +305,7 @@ namespace H3D {
 
 	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
@@ -317,14 +314,12 @@ namespace H3D {
 	void OVRManager::setViewport(H3D::X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		glViewport( eyeViewports[eye].Pos.x, eyeViewports[eye].Pos.y, 
-					eyeViewports[eye].Pos.x + eyeViewports[eye].Size.w, eyeViewports[eye].Pos.y + eyeViewports[eye].Size.h );
+					eyeViewports[eye].Size.w, eyeViewports[eye].Size.h );
 		//glViewport( width->getValue(), 0, width->getValue(), height->getValue() );
 	}
 
 	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		//Render texture info for rendering and distortion
-
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 	}
 
