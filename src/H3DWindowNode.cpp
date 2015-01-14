@@ -245,8 +245,6 @@ void H3DWindowNode::initialize() {
   initWindowHandler();
   initWindowWithContext();
   
-  ovrManager->initialise();
-
   if( !GLEW_init ) {
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
@@ -290,9 +288,6 @@ void H3DWindowNode::initialize() {
   }
   Node::initialize();
   last_render_mode = renderMode->getRenderMode();
-
-  ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
-
 }
 
 void renderStyli() {
@@ -654,9 +649,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
 
-  if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent()){
-    //TODO: display error message
-    
+  if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent()){    
     //Attempt to find rift
     ovrManager->initialise();
     ovrManager->configureRenderSettings(hWnd, wglGetCurrentDC());
@@ -667,7 +660,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
   }
 
-  if(stereo_mode == RenderMode::OCULUS_RIFT ){
+  if(stereo_mode == RenderMode::OCULUS_RIFT){
 	  ovrManager->startFrame();
   }
 

@@ -68,59 +68,6 @@ namespace H3D {
 		ovr_Shutdown();
 	}
 
-	void OVRManager::dismissHealthWarning(){
-		//Health and Saftey Warning Display State
-		ovrHSWDisplayState hswDisplayState;
-		ovrHmd_GetHSWDisplayState(hmd, &hswDisplayState);
-		if (hswDisplayState.Displayed)
-		{
-			ovrHmd_DismissHSWDisplay(hmd);
-		}
-	}
-
-	bool OVRManager::checkHealthWarningState(){
-		//Health and Saftey Warning Display State
-		ovrHSWDisplayState hswDisplayState;
-		ovrHmd_GetHSWDisplayState(hmd, &hswDisplayState);
-		// Dismiss the warning if the user pressed the appropriate key or if the user
-		// is tapping the side of the hmd.
-		if (hswDisplayState.Displayed)
-		{
-			//If the warning is still displayed, check for triggers to disable
-
-			//TODO: add key presses to turn off health and safety warning
-			// If the user has requested to dismiss the warning via keyboard or controller input...
-			// if (Util_GetAndResetHSWDismissedState()){
-			// 	ovrHmd_DismissHSWDisplay(hmd);
-			// 	return false;
-			// }
-			// else
-			//End TODO
-		
-			// Detect a moderate tap on the side of the hmd.
-			ovrTrackingState ts = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds());
-			if (ts.StatusFlags & ovrStatus_OrientationTracked)
-			{
-
-				const OVR::Vector3f v(ts.RawSensorData.Accelerometer.x,
-									  ts.RawSensorData.Accelerometer.y,
-									  ts.RawSensorData.Accelerometer.z);
-
-				// Arbitrary value and representing moderate tap on the side of the DK2 Rift.
-				if (v.LengthSq() > 250.f) {
-					ovrHmd_DismissHSWDisplay(hmd);
-					//The HSW is not displayed
-					return false;
-				}
-
-			}
-			//The HSW is still displayed
-			return true;
-		}
-		//The HSW is not displayed
-		return false;
-	}
-
 	void OVRManager::configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_){
 		//Break if HMD not initialised
 		if(!hmd) return;
@@ -185,7 +132,7 @@ namespace H3D {
 			//finally, unbind
 			unbindBuffers();
 		}
-
+		
 		for (int eye = 0; eye < 2; eye++ ){
 			//Render texture info for rendering and distortion
 			eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
@@ -224,32 +171,7 @@ namespace H3D {
 	}
 
 	void OVRManager::createRenderTextureForEye(int width, int height, int eye){
-		
-//TODO DELETE ONCE WORKING:
-		// // //glBindFramebuffer(GL_READ_FRAMEBUFFER, oculusReadFramebufferID[i]);
-		// glBindFramebuffer(GL_FRAMEBUFFER, flippedFramebufferID[eye]);
-		// //Init backbuffer flipped textures
-		// // "Bind" the newly created texture : all future texture functions will modify this texture
-		// glBindTexture(GL_TEXTURE_2D, flippedRiftTextureID[eye]);
-		// // Give an empty image to OpenGL ( the last "0" )
-		// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-		// // Poor filtering. Needed !
-		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		// // The depth buffer
-		// glBindRenderbuffer(GL_RENDERBUFFER, oculusDepthbufferID[eye]);
-		// glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-		// glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, oculusDepthbufferID[eye]);
-
-		// // Set "flippedRiftTextureID" as our colour attachement #0; draw to flipped first
-		// glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, flippedRiftTextureID[eye], 0);
-		// // Set the list of draw buffers.
-		// // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
-		// // glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-// ENDTODO
-
-
-		//The texture which will be drawn to
+			//The texture which will be drawn to
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 		
 		//Init output textures
@@ -268,10 +190,6 @@ namespace H3D {
 
 		// Set "oculusRiftTextureID" as our colour attachement #0
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, oculusRiftTextureID[eye], 0);
-
-		// Set the list of draw buffers.
-		// GLenum DrawBuffers2[1] = {GL_COLOR_ATTACHMENT0};
-		// glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 	}
 
 	OVR::Sizei OVRManager::getTextureSizei(){
