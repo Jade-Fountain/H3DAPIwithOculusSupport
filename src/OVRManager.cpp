@@ -180,6 +180,16 @@ namespace H3D {
 			unbindBuffers();
 		}
 
+		for (int eye = 0; eye < 2; eye++ ){
+			eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
+			eyeTextures[eye].OGL.Header.RenderViewport = eyeViewports[eye];
+			eyeTextures[eye].OGL.Header.TextureSize = eyeViewports[eye].Size;
+			eyeTextures[eye].OGL.TexId = oculusRiftTextureID[eye];
+			eyeTextures[eye].Texture.Header.API = ovrRenderAPI_OpenGL;
+			eyeTextures[eye].Texture.Header.RenderViewport = eyeViewports[eye];
+			eyeTextures[eye].Texture.Header.TextureSize = eyeViewports[eye].Size;
+		}
+
 		// Configure OpenGL.
 		ovrGLConfig cfg;
 
@@ -234,7 +244,7 @@ namespace H3D {
 		// // Set the list of draw buffers.
 		// // GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
 		// // glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-//ENDTODO
+// ENDTODO
 
 
 		//The texture which will be drawn to
@@ -272,6 +282,12 @@ namespace H3D {
 
 	void OVRManager::startFrame(){
 		ovrHmd_BeginFrame(hmd, 0);
+
+		//Is this introducing latency?
+		
+		headPoses[ovrEye_Left] = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Left);
+		headPoses[ovrEye_Right] = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Right);
+		
 	}
 
 	void OVRManager::endFrame(){
@@ -293,7 +309,6 @@ namespace H3D {
 
 	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
-		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
@@ -309,13 +324,6 @@ namespace H3D {
 	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
 		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
 		//Render texture info for rendering and distortion
-		eyeTextures[eye].OGL.Header.API = ovrRenderAPI_OpenGL;
-		eyeTextures[eye].OGL.Header.RenderViewport = eyeViewports[eye];
-		eyeTextures[eye].OGL.Header.TextureSize = renderTargetSize;
-		eyeTextures[eye].OGL.TexId = oculusRiftTextureID[eye];
-		eyeTextures[eye].Texture.Header.API = ovrRenderAPI_OpenGL;
-		eyeTextures[eye].Texture.Header.RenderViewport = eyeViewports[eye];
-		eyeTextures[eye].Texture.Header.TextureSize = renderTargetSize;
 
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 	}

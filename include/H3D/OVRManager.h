@@ -44,7 +44,6 @@ namespace H3D {
 		bool separateEyeTextures;
 
 		OVRManager() : separateEyeTextures(true),
-					   renderTargetSize(),
 					   near_distance(0.001f),
 					   far_distance(100.0f){}
 
@@ -88,14 +87,15 @@ namespace H3D {
 		const float far_distance;
 
 	private:		
-
+		//TODO comment
 		ovrHmd hmd;
 
 		ovrEyeRenderDesc EyeRenderDesc[2];
+
 		ovrPosef headPoses[2];
+
 		ovrGLTexture eyeTextures[2];
 		ovrRecti eyeViewports[2];
-		OVR::Sizei renderTargetSize;
 
 		GLuint oculusRiftTextureID[2];
 		GLuint oculusFramebufferID[2];
