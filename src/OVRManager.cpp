@@ -212,7 +212,6 @@ namespace H3D {
 	void OVRManager::setProjectionMatrix(ovrEyeType eye) {
 		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
 		glMultMatrixf(getColumnMajorRepresentation(proj));
-
 		// For some reason the eye textures are inverted between drawing to oculusRiftEyeTexture and the screen. It would be good to figure out why
 		// The health warning is the correct way up. 
 		// This flips clips space and tells open gl that the polygons are now coiled clockwise
@@ -224,13 +223,14 @@ namespace H3D {
 		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
-		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
+		OVR::Matrix4f camToCalibrationlessSpace = OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view;
+		OVR::Matrix4f camToWorld = worldToCalibration.Inverted() * camToCalibrationlessSpace;
+		glMultMatrixf(getColumnMajorRepresentation(camToWorld));
 	}
 
 	void OVRManager::setViewport(ovrEyeType eye){
 		glViewport( eyeViewports[eye].Pos.x, eyeViewports[eye].Pos.y, 
 					eyeViewports[eye].Size.w, eyeViewports[eye].Size.h );
-		//glViewport( width->getValue(), 0, width->getValue(), height->getValue() );
 	}
 
 	void OVRManager::drawBuffer(ovrEyeType eye){

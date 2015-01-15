@@ -24,6 +24,7 @@
 /// \file OVRManager.h
 /// \brief H file for OVRManager.cpp
 ///
+
 //
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -46,8 +47,11 @@ namespace H3D {
 		OVRManager() : separateEyeTextures(true),
 				   	   near_distance(0.001f),
 					   far_distance(100.0f),
-					   hmd(0){}
-
+					   hmd(0)
+					   {
+					   	worldToCalibration = OVR::Matrix4f::Scaling(0.1);
+					   	worldToCalibration *= OVR::Matrix4f::Translation(1,0,0);
+					   }
 		void initialise();
 
 		bool ovrHMDPresent();
@@ -104,14 +108,12 @@ namespace H3D {
 		GLuint oculusFramebufferID[2];
 		GLuint oculusDepthbufferID[2];
 
-		ovrPoseStatef getPoseOfHMD();
+		OVR::Matrix4f worldToCalibration;
 
 		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
 
 		//Utilities
 		GLfloat* getColumnMajorRepresentation(OVR::Matrix4f m);
-
-		std::string getString(OVR::Matrix4f m);
 	};
 
 }
