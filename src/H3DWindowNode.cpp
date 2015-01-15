@@ -648,7 +648,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     initialize();
   
   RenderMode::Mode stereo_mode = renderMode->getRenderMode();
-
+  
   if (stereo_mode == RenderMode::OCULUS_RIFT && !ovrManager->ovrHMDPresent()){    
     //Attempt to find rift
     ovrManager->initialise();
@@ -658,10 +658,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     if(!ovrManager->ovrHMDPresent()){
       stereo_mode = RenderMode::MONO;
     }
-  }
-
-  if(stereo_mode == RenderMode::OCULUS_RIFT){
-	  ovrManager->startFrame();
   }
 
   if( stereo_mode != last_render_mode ) {
@@ -890,7 +886,90 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   bool any_pointing_device_sensors =
   X3DPointingDeviceSensorNode::instancesExists();
   //Console(4) << clip_near << " " << clip_far << endl;
-  if( renderMode->isStereoMode() ) {
+  
+  if(stereo_mode == RenderMode::OCULUS_RIFT){
+    //RIFT needs its own loop to maximise experience (esp. latency)
+    ovrManager->startFrame();
+    for (int eye_number = 0; eye_number < 2; eye_number++){
+      ovrEyeType eye = ovrManager->getEyeOrder(eye_number);
+
+      clipDistances->setValue( Vec2f(clip_near, clip_far), id );
+
+      glMatrixMode(GL_PROJECTION);
+      glLoadIdentity();
+      ovrManager->setProjectionMatrix(eye);      
+      
+      ovrManager->drawBuffer(eye);
+
+      glMatrixMode(GL_MODELVIEW);
+      glLoadIdentity();
+   
+      // clear the buffers before rendering
+      glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+      if( background ) {
+        //TODO: fix this so that head tracking works for bg
+        glPushMatrix();
+        glRotatef( (H3DFloat) -(180/Constants::pi)*vp_orientation.angle, 
+                   vp_orientation.axis.x, 
+                   vp_orientation.axis.y,
+                   vp_orientation.axis.z );
+        glRotatef( (H3DFloat) (180/Constants::pi)*vp_inv_rot.angle, 
+                   vp_inv_rot.axis.x, vp_inv_rot.axis.y, vp_inv_rot.axis.z );
+        glDepthMask( GL_FALSE );
+        background->renderBackground();
+        glDepthMask( GL_TRUE );
+        glPopMatrix();
+      }
+      
+      GLboolean norm= glIsEnabled( GL_NORMALIZE );
+      if ( !norm ) 
+        glEnable( GL_NORMALIZE );
+
+      // add viewmatrix to model view matrix.
+      ovrManager->setViewMatrix(eye);
+      ovrManager->setViewport(eye);
+
+      if( any_pointing_device_sensors ) {
+        // Get matrices used to calculate arguments for
+        // X3DPointingDeviceSensorNode::updateX3DPointingDeviceSensors
+        glGetDoublev( GL_PROJECTION_MATRIX, mono_projmatrix );
+        glGetDoublev( GL_MODELVIEW_MATRIX, mono_mvmatrix );
+      }
+
+      if( ti ) {
+        for( TraverseInfo::LightVector::const_iterator i = 
+                                ti->getActiveLightNodes().begin();
+             i != ti->getActiveLightNodes().end();
+             ++i ) {
+          (*i).getLight()->enableGraphicsState();
+        }
+      }
+
+      H3DMultiPassRenderObject::renderPostViewpointAll( child_to_render, 
+                                                        vp );
+      renderChild( child_to_render );
+
+      H3DMultiPassRenderObject::renderPostSceneAll( child_to_render, 
+                                                    vp );
+
+      if( shadow_caster ) shadow_caster->render();
+
+      if( ti ) {
+        for( TraverseInfo::LightVector::const_iterator i = 
+                                ti->getActiveLightNodes().begin();
+             i != ti->getActiveLightNodes().end();
+             ++i ) {
+          (*i).getLight()->disableGraphicsState();
+        }
+      }
+      // TODO: if(ovrManager->separateEyeTextures) 
+    if ( !norm ) 
+      glDisable( GL_NORMALIZE );
+
+	  ovrManager->endFrame();
+    
+    }
+  } else if( renderMode->isStereoMode() ) {
     // make sure the focal plane is between the near and far 
     // clipping planes.
     if( focal_distance <= clip_near ) {
@@ -943,20 +1022,14 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     // X3DViewpointNode.
     eye_mode = X3DViewpointNode::LEFT_EYE;
     //OCULUS: if rift mode, use rift params
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->setProjectionMatrix(eye_mode);          
-    } else {
-      vp->setupProjection( eye_mode,
-                           projection_width,
-                           projection_height,
-                           clip_near, clip_far,
-                           stereo_info );
-    }
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->drawBuffer(eye_mode);
-    } else {
-      glDrawBuffer(GL_BACK_LEFT);
-    }
+
+    vp->setupProjection( eye_mode,
+                         projection_width,
+                         projection_height,
+                         clip_near, clip_far,
+                         stereo_info );
+
+    glDrawBuffer(GL_BACK_LEFT);
     
     if( stereo_mode == RenderMode::RED_BLUE_STEREO ||
         stereo_mode == RenderMode::RED_GREEN_STEREO ||
@@ -999,8 +1072,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::VERTICAL_SPLIT || 
                stereo_mode == RenderMode::VERTICAL_SPLIT_KEEP_RATIO) {
       glViewport( 0, 0, width->getValue() / 2, height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT ){
-      ovrManager->setViewport(eye_mode);
     }
     // clear the buffers before rendering
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1024,13 +1095,8 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 
     // add viewmatrix to model view matrix.
 
-    //Oculus: IPD used here:
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->setViewMatrix(eye_mode);
-    } else {
-      vp->setupViewMatrix( eye_mode,
+    vp->setupViewMatrix( eye_mode,
                            stereo_info );
-    }
 
     if( ti ) {
       for( TraverseInfo::LightVector::const_iterator i = 
@@ -1072,23 +1138,14 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glFrontFace( GL_CCW );
     }
     eye_mode = X3DViewpointNode::RIGHT_EYE;
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->setProjectionMatrix(eye_mode);    
-    } else {
-      vp->setupProjection( eye_mode,
-                           projection_width,
-                           projection_height,
-                           clip_near, clip_far,
-                           stereo_info );
-    }
+    vp->setupProjection( eye_mode,
+                         projection_width,
+                         projection_height,
+                         clip_near, clip_far,
+                         stereo_info );
+
     
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->drawBuffer(eye_mode);
-      // clear the buffers before rendering
-      if(ovrManager->separateEyeTextures){
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );      
-      }
-    } else if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
+    if( stereo_mode == RenderMode::QUAD_BUFFERED_STEREO ) {
       glDrawBuffer(GL_BACK_RIGHT);
       // clear the buffers before rendering
       glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -1125,8 +1182,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     } else if( stereo_mode == RenderMode::NVIDIA_3DVISION  ) {
       glViewport( width->getValue(), 0, 
                   width->getValue(), height->getValue() );
-    } else if (stereo_mode == RenderMode::OCULUS_RIFT ){
-      ovrManager->setViewport(eye_mode);
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -1147,12 +1202,9 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     }
 
     // add viewmatrix to model view matrix.
-    if(stereo_mode == RenderMode::OCULUS_RIFT){
-      ovrManager->setViewMatrix(eye_mode);
-    } else {
-      vp->setupViewMatrix( eye_mode,
-                           stereo_info );
-    }
+    vp->setupViewMatrix( eye_mode,
+                         stereo_info );
+
 
     
     if( ti ) {
@@ -1251,10 +1303,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
 #ifdef  HAVE_PROFILER
     H3DUtil::H3DTimer::stepBegin("Stereo_swapBuffers");
 #endif
-    if(stereo_mode != RenderMode::OCULUS_RIFT){
-      //Reduce latency by not swapping buffers?
-      swapBuffers();
-    }
+    swapBuffers();
 #ifdef  HAVE_PROFILER
     H3DUtil::H3DTimer::stepEnd("Stereo_swapBuffers");
 #endif
@@ -1290,9 +1339,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glPopMatrix();
     }
 
-    if(stereo_mode == RenderMode::OCULUS_RIFT ){
-      ovrManager->endFrame();
-    }
 
   } else {
     // MONO

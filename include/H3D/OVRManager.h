@@ -72,17 +72,19 @@ namespace H3D {
 		
 		void endFrame();
 
-		void setProjectionMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
+		void setProjectionMatrix(ovrEyeType eye);
 
-		void setViewMatrix(H3D::X3DViewpointNode::EyeMode eye_mode);
+		void setViewMatrix(ovrEyeType eye);
 
-		void setViewport(H3D::X3DViewpointNode::EyeMode eye_mode);
+		void setViewport(ovrEyeType eye);
 
-		void drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode);
+		void drawBuffer(ovrEyeType eye);
 		
 		void unbindBuffers();
 
 		std::string getConsoletext();
+
+		ovrEyeType getEyeOrder(int eye_number);
 
 		const float near_distance;
 		const float far_distance;

@@ -209,8 +209,7 @@ namespace H3D {
 		ovrHmd_EndFrame(hmd, headPoses, &eyeTextures[0].Texture);
 	}
 
-	void OVRManager::setProjectionMatrix(X3DViewpointNode::EyeMode eye_mode) {
-		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+	void OVRManager::setProjectionMatrix(ovrEyeType eye) {
 		OVR::Matrix4f proj = OVR::Matrix4f(ovrMatrix4f_Projection(EyeRenderDesc[eye].Fov, near_distance, far_distance, true));
 		glMultMatrixf(getColumnMajorRepresentation(proj));
 
@@ -221,23 +220,20 @@ namespace H3D {
       	glFrontFace( GL_CW );  
 	}
 
-	void OVRManager::setViewMatrix(X3DViewpointNode::EyeMode eye_mode){
-		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+	void OVRManager::setViewMatrix(ovrEyeType eye){
 		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		glMultMatrixf(getColumnMajorRepresentation(OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view));
 	}
 
-	void OVRManager::setViewport(H3D::X3DViewpointNode::EyeMode eye_mode){
-		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+	void OVRManager::setViewport(ovrEyeType eye){
 		glViewport( eyeViewports[eye].Pos.x, eyeViewports[eye].Pos.y, 
 					eyeViewports[eye].Size.w, eyeViewports[eye].Size.h );
 		//glViewport( width->getValue(), 0, width->getValue(), height->getValue() );
 	}
 
-	void OVRManager::drawBuffer(H3D::X3DViewpointNode::EyeMode eye_mode){
-		ovrEyeType eye = H3DEyeModeToOVREyeType(eye_mode);
+	void OVRManager::drawBuffer(ovrEyeType eye){
 		glBindFramebuffer(GL_FRAMEBUFFER, oculusFramebufferID[eye]);
 	}
 
@@ -246,6 +242,11 @@ namespace H3D {
    		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	ovrEyeType OVRManager::getEyeOrder(int eye_number){
+		return hmd->EyeRenderOrder[eye_number];
+	}
+
+	//Currently redundant
 	ovrEyeType OVRManager::H3DEyeModeToOVREyeType(X3DViewpointNode::EyeMode eye_mode){
 		if (eye_mode == X3DViewpointNode::EyeMode::MONO || eye_mode == X3DViewpointNode::EyeMode::LEFT_EYE){
 			return ovrEye_Left;
