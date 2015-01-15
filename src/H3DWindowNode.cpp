@@ -1008,6 +1008,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     if( background ) {
+      //TODO: add OVRManager->drawBackground();
       glPushMatrix();
       glRotatef( (H3DFloat) -(180/Constants::pi)*vp_orientation.angle, 
                  vp_orientation.axis.x, 
@@ -1251,6 +1252,7 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
     H3DUtil::H3DTimer::stepBegin("Stereo_swapBuffers");
 #endif
     if(stereo_mode != RenderMode::OCULUS_RIFT){
+      //Reduce latency by not swapping buffers?
       swapBuffers();
     }
 #ifdef  HAVE_PROFILER
@@ -1288,6 +1290,9 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
       glPopMatrix();
     }
 
+    if(stereo_mode == RenderMode::OCULUS_RIFT ){
+      ovrManager->endFrame();
+    }
 
   } else {
     // MONO
@@ -1497,10 +1502,6 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
   if( headlight_index != -1 ) {
     glPopAttrib();
     X3DLightNode::decreaseLightIndex();
-  }
-
-  if(stereo_mode == RenderMode::OCULUS_RIFT ){
-    ovrManager->endFrame();
   }
 }
 

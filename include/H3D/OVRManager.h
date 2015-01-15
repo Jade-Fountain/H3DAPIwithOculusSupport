@@ -44,7 +44,7 @@ namespace H3D {
 		bool separateEyeTextures;
 
 		OVRManager() : separateEyeTextures(true),
-					   near_distance(0.001f),
+				   	   near_distance(0.001f),
 					   far_distance(100.0f),
 					   hmd(0){}
 
