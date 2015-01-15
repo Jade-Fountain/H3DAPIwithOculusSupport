@@ -962,13 +962,11 @@ void H3DWindowNode::render( X3DChildNode *child_to_render ) {
           (*i).getLight()->disableGraphicsState();
         }
       }
-      // TODO: if(ovrManager->separateEyeTextures) 
-    if ( !norm ) 
-      glDisable( GL_NORMALIZE );
-
-	  ovrManager->endFrame();
-    
+      if ( !norm ) 
+        glDisable( GL_NORMALIZE );    
     }
+    ovrManager->endFrame();
+
   } else if( renderMode->isStereoMode() ) {
     // make sure the focal plane is between the near and far 
     // clipping planes.
