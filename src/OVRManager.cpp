@@ -224,7 +224,7 @@ namespace H3D {
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		OVR::Matrix4f camToCalibrationlessSpace = OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view;
-		OVR::Matrix4f camToWorld = worldToCalibration.Inverted() * camToCalibrationlessSpace;
+		OVR::Matrix4f camToWorld =camToCalibrationlessSpace * worldToCalibration;
 		glMultMatrixf(getColumnMajorRepresentation(camToWorld));
 	}
 

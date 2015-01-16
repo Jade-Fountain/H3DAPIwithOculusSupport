@@ -49,8 +49,10 @@ namespace H3D {
 					   far_distance(100.0f),
 					   hmd(0)
 					   {
-					   	worldToCalibration = OVR::Matrix4f::Scaling(0.1);
-					   	worldToCalibration *= OVR::Matrix4f::Translation(1,0,0);
+					   	//Translate in the real world
+					   	worldToCalibration = OVR::Matrix4f::Translation(0,-0.33,-0.310);
+					   	//Scale to to match haptics
+					   	worldToCalibration *= OVR::Matrix4f::Scaling(1);
 					   }
 		void initialise();
 
