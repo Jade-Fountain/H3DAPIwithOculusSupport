@@ -53,6 +53,13 @@ namespace H3D {
 					   	worldToCalibration = OVR::Matrix4f::Translation(0,-0.33,-0.310);
 					   	//Scale to to match haptics
 					   	worldToCalibration *= OVR::Matrix4f::Scaling(1);
+
+					   	bestPenToHMD = Matrix4f::Identity();
+						bestRobotToOVR = Matrix4f::Identity();
+						bestError = std::numeric_limits<double>::max();	
+
+						angleLearningRate = M_PI_4;
+						translationLearningRate = 0.1;
 					   }
 		void initialise();
 
@@ -95,6 +102,15 @@ namespace H3D {
 		const float near_distance;
 		const float far_distance;
 
+		//CALIBRATION
+
+		void setCalibrationSamples(const std::vector<OVR::Matrix4f>& HMDSamples_, const std::vector<OVR::Matrix4f>& PenSamples_);
+		
+		double calibrate(const std::vector<OVR::Matrix4f>& HMDSamples, const std::vector<OVR::Matrix4f>& PenSamples, int iterations = 100);
+		
+		double computeCalibrationSquareError(const std::vector<OVR::Matrix4f>& HMDSamples, const std::vector<OVR::Matrix4f>& PenSamples);
+		
+		Matrix4f deltaMat(const Matrix4f& m);
 	private:		
 		//TODO comment
 		ovrHmd hmd;
@@ -116,6 +132,15 @@ namespace H3D {
 
 		//Utilities
 		GLfloat* getColumnMajorRepresentation(OVR::Matrix4f m);
+
+		//Calibration variables
+		OVR::Matrix4f bestPenToHMD;
+		OVR::Matrix4f bestRobotToOVR;
+		double bestError;
+		float angleLearningRate;
+		float translationLearningRate;
+		std::vector<OVR::Matrix4f> PenSamples;
+		std::vector<OVR::Matrix4f> HMDSamples;
 	};
 
 }

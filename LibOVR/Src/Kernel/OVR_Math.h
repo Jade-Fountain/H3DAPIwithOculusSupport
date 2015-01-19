@@ -1691,7 +1691,7 @@ public:
         return ((I+J)&1) ? -SubDet(indices[I],indices[J]) : SubDet(indices[I],indices[J]);
     }
 
-    T    Determinant() const
+    T Determinant() const
     {
         return M[0][0] * Cofactor(0,0) + M[0][1] * Cofactor(0,1) + M[0][2] * Cofactor(0,2) + M[0][3] * Cofactor(0,3);
     }

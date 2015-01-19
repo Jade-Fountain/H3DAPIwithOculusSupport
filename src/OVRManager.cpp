@@ -42,6 +42,8 @@ namespace H3D {
 	using H3D::X3DViewpointNode;
 	
 	using OVR::Sizei;
+	using OVR::Matrix4f;
+	using OVR::Quaternion;
 
 
 	void OVRManager::initialise(){
@@ -262,4 +264,57 @@ namespace H3D {
 						m.M[0][3], m.M[1][3], m.M[2][3], m.M[3][3] };
 		return M;
 	}
+
+
+	//CALIBRATION
+
+	void OVRManager::setCalibrationSamples(const std::vector<OVR::Matrix4f>& HMDSamples_, const std::vector<OVR::Matrix4f>& PenSamples_){
+		HMDSamples = HMDSamples_;
+		PenSamples = PenSamples_;
+		bestError = std::numeric_limits<double>::max();
+	}
+
+	double OVRManager::calibrate(int iterations){
+		
+		for (int i = 0; i < iterations; i++){
+			Matrix4f newRobotToOVR = deltaMat(bestRobotToOVR);
+			Matrix4f newPenToHMD = deltaMat(bestPenToHMD);
+			double newError = computeCalibrationSquareError(newRobotToOVR,newPenToHMD);
+			if (newError < bestError){
+				bestError = newError
+				bestRobotToOVR = newRobotToOVR;
+				bestPenToHMD = newPenToHMD;
+			}
+		}
+
+		return bestError;
+	}
+
+	double OVRManager::computeCalibrationSquareError(const Matrix4f& robotToOVR, const Matrix4f& penToHMD){
+		double error = 0;
+		for (int i = 0; i < PenSamples.size(); i++){
+			Matrix4f errorMat = (HMDSamples[i] - robotToOVR * PenSamples[i] * penToHMD.Inverse());
+			for(int j = 0; j < 4; j++){
+				for(int k = 0; k < 4; k++){
+					error += errorMat.M[j][k] * errorMat.M[j][k];
+				}
+			}
+		}
+		return error;
+	}
+
+	Matrix4f OVRManager::deltaMat(const Matrix4f& m){
+		float theta = 2 * M_PI * rand() / float(RAND_MAX);
+		float phi = M_PI * rand() / float(RAND_MAX);
+		Vector3f axis = Vector3f(std::cos(theta) * std::cos(phi), std::sin(theta) * std::cos(phi), std::sin(phi));
+		float angle = angleLearningRate * rand() / float(RAND_MAX);
+		Quatf qr = Quatf(axis, angle) * Quat(Matrix4f);
+		Matrix4f r(qr);
+
+		Vector3f translation = Vector3f(translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX));
+		r.SetTranslation(m.GetTranslation + translation);
+		
+		return r;
+	}
+
 }

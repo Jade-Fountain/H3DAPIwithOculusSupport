@@ -401,7 +401,11 @@ WxFrame::WxFrame( wxWindow *_parent, wxWindowID _id,
 #endif
   advancedMenu->Append(FRAME_TREEVIEW, wxT("Show Tree View\tF9"),
                        wxT("Show the scene as a tree, making it possible to inspect and change values at runtime."));
-   advancedMenu->Append(FRAME_FRAMERATE, wxT("Show Framerates\tF8"),
+  
+  advancedMenu->Append(FRAME_FRAMERATE, wxT("Show HMD Calibration"),
+                       wxT("Displays the tool used to calibrate the transformation between the haptic and visual spaces for the Oculus Rift"));
+  
+  advancedMenu->Append(FRAME_FRAMERATE, wxT("Show Framerates\tF8"),
                        wxT("Show the frame rates of graphics and haptics loop"));
 #ifdef HAVE_WXPROPGRID
    advancedMenu->Append(FRAME_PROGRAMSETTINGS, wxT("Show Program Settings\tF7"),
