@@ -42,8 +42,7 @@ namespace H3D {
 	using H3D::X3DViewpointNode;
 	
 	using OVR::Sizei;
-	using OVR::Matrix4f;
-	using OVR::Quaternion;
+
 
 
 	void OVRManager::initialise(){
@@ -271,17 +270,17 @@ namespace H3D {
 	void OVRManager::setCalibrationSamples(const std::vector<OVR::Matrix4f>& HMDSamples_, const std::vector<OVR::Matrix4f>& PenSamples_){
 		HMDSamples = HMDSamples_;
 		PenSamples = PenSamples_;
-		bestError = std::numeric_limits<double>::max();
+		bestError = 9999999999999999999;
 	}
 
 	double OVRManager::calibrate(int iterations){
 		
 		for (int i = 0; i < iterations; i++){
-			Matrix4f newRobotToOVR = deltaMat(bestRobotToOVR);
-			Matrix4f newPenToHMD = deltaMat(bestPenToHMD);
+			OVR::Matrix4f newRobotToOVR = deltaMat(bestRobotToOVR);
+			OVR::Matrix4f newPenToHMD = deltaMat(bestPenToHMD);
 			double newError = computeCalibrationSquareError(newRobotToOVR,newPenToHMD);
 			if (newError < bestError){
-				bestError = newError
+				bestError = newError;
 				bestRobotToOVR = newRobotToOVR;
 				bestPenToHMD = newPenToHMD;
 			}
@@ -290,10 +289,10 @@ namespace H3D {
 		return bestError;
 	}
 
-	double OVRManager::computeCalibrationSquareError(const Matrix4f& robotToOVR, const Matrix4f& penToHMD){
+	double OVRManager::computeCalibrationSquareError(const OVR::Matrix4f& robotToOVR, const OVR::Matrix4f& penToHMD){
 		double error = 0;
 		for (int i = 0; i < PenSamples.size(); i++){
-			Matrix4f errorMat = (HMDSamples[i] - robotToOVR * PenSamples[i] * penToHMD.Inverse());
+			OVR::Matrix4f errorMat = (HMDSamples[i] - robotToOVR * PenSamples[i] * penToHMD.Inverted());
 			for(int j = 0; j < 4; j++){
 				for(int k = 0; k < 4; k++){
 					error += errorMat.M[j][k] * errorMat.M[j][k];
@@ -303,16 +302,16 @@ namespace H3D {
 		return error;
 	}
 
-	Matrix4f OVRManager::deltaMat(const Matrix4f& m){
+	OVR::Matrix4f OVRManager::deltaMat(const OVR::Matrix4f& m){
 		float theta = 2 * M_PI * rand() / float(RAND_MAX);
 		float phi = M_PI * rand() / float(RAND_MAX);
-		Vector3f axis = Vector3f(std::cos(theta) * std::cos(phi), std::sin(theta) * std::cos(phi), std::sin(phi));
+		OVR::Vector3f axis = OVR::Vector3f(std::cos(theta) * std::cos(phi), std::sin(theta) * std::cos(phi), std::sin(phi));
 		float angle = angleLearningRate * rand() / float(RAND_MAX);
-		Quatf qr = Quatf(axis, angle) * Quat(Matrix4f);
-		Matrix4f r(qr);
+		OVR::Quatf qr = OVR::Quatf(axis, angle) * OVR::Quatf(m);
+		OVR::Matrix4f r(qr);
 
-		Vector3f translation = Vector3f(translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX));
-		r.SetTranslation(m.GetTranslation + translation);
+		OVR::Vector3f translation = OVR::Vector3f(translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX), translationLearningRate * rand() / float(RAND_MAX));
+		r.SetTranslation(m.GetTranslation() + translation);
 		
 		return r;
 	}

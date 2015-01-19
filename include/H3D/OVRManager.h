@@ -38,6 +38,9 @@
 #include <GL/glew.h>
 #include "OVR_CAPI_GL.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 namespace H3D {
 
 	class OVRManager {
@@ -54,11 +57,11 @@ namespace H3D {
 					   	//Scale to to match haptics
 					   	worldToCalibration *= OVR::Matrix4f::Scaling(1);
 
-					   	bestPenToHMD = Matrix4f::Identity();
-						bestRobotToOVR = Matrix4f::Identity();
-						bestError = std::numeric_limits<double>::max();	
+					   	bestPenToHMD = OVR::Matrix4f::Identity();
+						bestRobotToOVR = OVR::Matrix4f::Identity();
+						bestError = 9999999999999999999;	
 
-						angleLearningRate = M_PI_4;
+						angleLearningRate = M_PI;
 						translationLearningRate = 0.1;
 					   }
 		void initialise();
@@ -106,11 +109,11 @@ namespace H3D {
 
 		void setCalibrationSamples(const std::vector<OVR::Matrix4f>& HMDSamples_, const std::vector<OVR::Matrix4f>& PenSamples_);
 		
-		double calibrate(const std::vector<OVR::Matrix4f>& HMDSamples, const std::vector<OVR::Matrix4f>& PenSamples, int iterations = 100);
+		double calibrate(int iterations = 100);
 		
-		double computeCalibrationSquareError(const std::vector<OVR::Matrix4f>& HMDSamples, const std::vector<OVR::Matrix4f>& PenSamples);
+		double computeCalibrationSquareError(const OVR::Matrix4f& robotToOVR, const OVR::Matrix4f& penToHMD);
 		
-		Matrix4f deltaMat(const Matrix4f& m);
+		OVR::Matrix4f deltaMat(const OVR::Matrix4f& m);
 	private:		
 		//TODO comment
 		ovrHmd hmd;
