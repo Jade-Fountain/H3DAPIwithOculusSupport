@@ -323,6 +323,7 @@ public:
   void ShowTreeView( wxCommandEvent & event );
   void ShowPluginsDialog( wxCommandEvent & event );
   void ShowFrameRate( wxCommandEvent & event );
+  void ShowHMDCalibration(wxCommandEvent & event);
   void ShowProgramSettings( wxCommandEvent & event );
   void OnKeepViewpointOnLoadCheck( wxCommandEvent & event );
   void OnRouteSendsEventsCheck( wxCommandEvent & event );
@@ -481,6 +482,7 @@ public:
   H3DViewerPluginsDialog * plugins_dialog;
   MenuContainer *menu_container;
   FrameRateDialog *  frameRates;
+  HMDCalibrationDialog *  hmdCalibrationDialog;
   SettingsDialog * settings;
   SpeedDialog *speed_slider;
 
