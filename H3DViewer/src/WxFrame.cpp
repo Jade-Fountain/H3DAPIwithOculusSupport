@@ -2073,9 +2073,6 @@ void WxFrame::ShowFrameRate(wxCommandEvent & event)
 
 void WxFrame::ShowHMDCalibration(wxCommandEvent & event)
 {
-  //frameRates = new FrameRateDialog( this );
-  //frameRates->updateMenuItems();
-
   // set labels to make sure they are the right size when shown
   // (otherwise some numbers may not be displayed)
   hmdCalibrationDialog->graphics_rate->SetLabel( wxT("100") );
@@ -3149,6 +3146,8 @@ void FrameRateDialog::updateFrameRates() {
   }
 }
 
+
+//Oculus and general HMD Calibration dialog
 IMPLEMENT_CLASS(HMDCalibrationDialog, wxDialog)
 
 BEGIN_EVENT_TABLE(HMDCalibrationDialog, wxDialog)
@@ -3158,8 +3157,6 @@ END_EVENT_TABLE()
 HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win ) :
   wxDialog (win, wxID_ANY, wxT("Frame rates"), wxDefaultPosition, wxDefaultSize,
             wxDEFAULT_DIALOG_STYLE) {
-  graphics_rate = NULL;
-  haptics_rate = NULL;
 
   topsizer = new wxBoxSizer( wxVERTICAL );
 
@@ -3181,65 +3178,9 @@ void HMDCalibrationDialog::OnKeyDown(wxKeyEvent& event) {
 }
 
 void HMDCalibrationDialog::updateMenuItems() {
-  unsigned int nr_devices = 0;
-  DeviceInfo *di = DeviceInfo::getActive();
-  if( di ) {
-    nr_devices = di->device->size();
-  }
-
-  wxBoxSizer* framerate_sizer = new wxBoxSizer( wxHORIZONTAL );
-  framerate_sizer->Add( new wxStaticText( this, wxID_ANY, wxT("&Graphics:")), 0,
-                        wxALL|wxALIGN_CENTER_VERTICAL, 5);
-  graphics_rate = new wxStaticText( this, wxID_ANY, wxT("&1000"), 
-                                    wxDefaultPosition, 
-                                    wxDefaultSize,wxALIGN_RIGHT|wxST_NO_AUTORESIZE );
-  framerate_sizer->Add( graphics_rate, 0,
-                        wxALL|wxALIGN_RIGHT, 5);
   
-  framerate_sizer->Add( new wxStaticText( this, wxID_ANY, wxT("&Haptics:")), 0,
-                        wxALL|wxALIGN_CENTER_VERTICAL, 5);
-  haptics_rate = new wxStaticText( this, wxID_ANY, wxT("&1000"), 
-                                   wxDefaultPosition, 
-                                   wxDefaultSize,wxALIGN_RIGHT|wxST_NO_AUTORESIZE );
-  framerate_sizer->Add( haptics_rate, 0,
-                        wxALL|wxALIGN_RIGHT, 5);
-
-  framerate_sizer->Add( new wxStaticText( this, wxID_ANY, wxT("&Haptics time(10-5 s):")), 0,
-                        wxALL|wxALIGN_CENTER_VERTICAL, 5);
-  haptics_time = new wxStaticText( this, wxID_ANY, wxT("&100"), 
-                                   wxDefaultPosition, 
-                                   wxDefaultSize,wxALIGN_RIGHT|wxST_NO_AUTORESIZE );
-  framerate_sizer->Add( haptics_time, 0,
-                        wxALL|wxALIGN_RIGHT, 5);
-
-  topsizer->Add(framerate_sizer, 0,
-                wxALL|wxALIGN_CENTER_VERTICAL, 5 );    
-
 }
 
-void HMDCalibrationDialog::updateFrameRates() {
-  unsigned int nr_devices = 0;
-  DeviceInfo *di = DeviceInfo::getActive();
-  if( di ) {
-    nr_devices = di->device->size();
-  }
-
-  Scene *scene = *Scene::scenes.begin();
-  
-  stringstream s;
-  s  <<  (int)scene->frameRate->getValue();
-
-  graphics_rate->SetLabel( wxString(s.str().c_str(),wxConvUTF8) );
-  if( di && di->device->size() > 0 ) {
-    H3DHapticsDevice *hd = di->device->getValueByIndex( 0 );
-    stringstream hs;
-    hs  <<  (int)hd->hapticsRate->getValue();
-    haptics_rate->SetLabel( wxString(hs.str().c_str(),wxConvUTF8) );
-
-    stringstream hts;
-    hts << (int)(hd->hapticsLoopTime->getValue() * 1e5 );
-    haptics_time->SetLabel( wxString(hts.str().c_str(),wxConvUTF8) );
-  }
 }
 
 
@@ -3374,6 +3315,10 @@ void WxFrame::hideAllDialogs() {
   if( frameRates->IsShown() && frame_rect.Intersects( frameRates->GetScreenRect() ) ) {
     frameRates->Show(false);
     dialogs_hidden_because_of_fullscreen.push_back( frameRates );
+  }
+  if( hmdCalibrationDialog->IsShown() && frame_rect.Intersects( hmdCalibrationDialog->GetScreenRect() ) ) {
+    hmdCalibrationDialog->Show(false);
+    dialogs_hidden_because_of_fullscreen.push_back( hmdCalibrationDialog );
   }
 #ifdef HAVE_PROFILER
   if( the_profiled_result->IsShown() && frame_rect.Intersects( the_profiled_result->GetScreenRect() ) ) {

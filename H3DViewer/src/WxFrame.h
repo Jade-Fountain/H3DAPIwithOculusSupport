@@ -242,15 +242,10 @@ class HMDCalibrationDialog: public wxDialog {
   public:
   HMDCalibrationDialog(wxWindow* parent );
   
-  void updateFrameRates();
   void updateMenuItems();
 
   void OnKeyDown(wxKeyEvent& event);
 
-  wxBoxSizer *topsizer;
-  wxStaticText *graphics_rate;
-  wxStaticText *haptics_rate;
-  wxStaticText *haptics_time;
 //  vector< wxStaticText * > haptics_rate;
 DECLARE_EVENT_TABLE()
 };
