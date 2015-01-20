@@ -237,6 +237,25 @@ DECLARE_EVENT_TABLE()
 };
 
 
+class HMDCalibrationDialog: public wxDialog {
+  DECLARE_CLASS(HMDCalibrationDialog)
+  public:
+  HMDCalibrationDialog(wxWindow* parent );
+  
+  void updateFrameRates();
+  void updateMenuItems();
+
+  void OnKeyDown(wxKeyEvent& event);
+
+  wxBoxSizer *topsizer;
+  wxStaticText *graphics_rate;
+  wxStaticText *haptics_rate;
+  wxStaticText *haptics_time;
+//  vector< wxStaticText * > haptics_rate;
+DECLARE_EVENT_TABLE()
+};
+
+
 
 // ---------------------------------------------------------------------------
 //  WxFrame Definition
@@ -555,6 +574,7 @@ enum
   FRAME_TREEVIEW,
   FRAME_PLUGINS,
   FRAME_FRAMERATE,
+  FRAME_HMD_CALIBRATION,
   FRAME_PROGRAMSETTINGS,
   FRAME_KEEPVIEWPOINTONLOAD,
   FRAME_ROUTESENDSEVENTS,
