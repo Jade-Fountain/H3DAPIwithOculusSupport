@@ -43,9 +43,12 @@ namespace H3D {
 	
 	using OVR::Sizei;
 
-
+	void OVRManager::loadCalibrationScript(std::string file_name){
+		calibrationToolsScript.loadScript(file_name);
+	}
 
 	void OVRManager::initialise(){
+		loadCalibrationScript("calibrationtools.py");
 
 		ovr_Initialize();
 

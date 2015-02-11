@@ -2073,11 +2073,19 @@ void WxFrame::ShowFrameRate(wxCommandEvent & event)
 
 void WxFrame::ShowHMDCalibration(wxCommandEvent & event)
 {
+  /*TODO: 
+  --Load python script
+  --Check if failed. Remind user they need numpy and scipy
+  --Then tell user to affix the devices to the hmd and press calibrate
+  --Automatically detect useful and different samples
+  --Wait for 10 samples or so
+  --Solve and save calibration data: prompt user to name it
+  --Include apply button*/
   // set labels to make sure they are the right size when shown
   // (otherwise some numbers may not be displayed)
-  hmdCalibrationDialog->graphics_rate->SetLabel( wxT("100") );
-  hmdCalibrationDialog->haptics_rate->SetLabel( wxT("1000") );
-  hmdCalibrationDialog->haptics_time->SetLabel( wxT("100") );
+  frameRates->graphics_rate->SetLabel( wxT("100") );
+  frameRates->haptics_rate->SetLabel( wxT("1000") );
+  frameRates->haptics_time->SetLabel( wxT("100") );
   if (!(check_dialogs_position_because_of_fullscreen_and_not_quadro &&
       GetScreenRect().Intersects( hmdCalibrationDialog->GetScreenRect() ) ) ) {
     if( hmdCalibrationDialog->IsIconized() )
@@ -3179,8 +3187,6 @@ void HMDCalibrationDialog::OnKeyDown(wxKeyEvent& event) {
 
 void HMDCalibrationDialog::updateMenuItems() {
   
-}
-
 }
 
 

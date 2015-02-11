@@ -35,8 +35,13 @@
 
 #include "H3D/StereoInfo.h"
 #include "H3D/X3DViewpointNode.h"
+#include "H3D\PythonScript.h"
 #include <GL/glew.h>
 #include "OVR_CAPI_GL.h"
+
+#include <string>
+#include <fstream>
+#include <streambuf>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -49,7 +54,8 @@ namespace H3D {
 		OVRManager() : separateEyeTextures(true),
 				   	   near_distance(0.001f),
 					   far_distance(100.0f),
-					   hmd(0)
+					   hmd(0),
+					   calibrationToolsScript()
 					   {
 					   	//Translate in the real world
 					   	worldToCalibration = OVR::Matrix4f::Translation(0,-0.33,-0.310);
@@ -63,6 +69,9 @@ namespace H3D {
 						angleLearningRate = M_PI;
 						translationLearningRate = 0.1;
 					   }
+
+		void loadCalibrationScript(std::string file_name);
+
 		void initialise();
 
 		bool ovrHMDPresent();
@@ -114,6 +123,7 @@ namespace H3D {
 		
 		OVR::Matrix4f deltaMat(const OVR::Matrix4f& m);
 	private:		
+		H3D::PythonScript calibrationToolsScript;
 		//TODO comment
 		ovrHmd hmd;
 
