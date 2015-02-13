@@ -49,7 +49,7 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <Python/Python.h>
 #else
-#include <Python.h>
+#include "Python.h"
 #endif
 #if defined(_MSC_VER)
 // redefine _DEBUG if it was undefed

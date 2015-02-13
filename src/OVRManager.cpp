@@ -33,7 +33,6 @@
 #include "H3DUtil/Rotation.h"
 #include <iostream>
 
-
  
 namespace H3D {
 
@@ -44,11 +43,12 @@ namespace H3D {
 	using OVR::Sizei;
 
 	void OVRManager::loadCalibrationScript(std::string file_name){
+		calibrationToolsScript.initialize();
 		calibrationToolsScript.loadScript(file_name);
 	}
 
 	void OVRManager::initialise(){
-		loadCalibrationScript("calibrationtools.py");
+		loadCalibrationScript("C:\\Users\\Jake\\OneDrive\\PhD\\H3DAndOculus\\calibrationtools.py");
 
 		ovr_Initialize();
 

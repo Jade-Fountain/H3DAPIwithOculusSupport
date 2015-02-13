@@ -43,7 +43,7 @@
 #include <fstream>
 #include <streambuf>
 
-#define _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES //For M_PI
 #include <math.h>
 
 namespace H3D {

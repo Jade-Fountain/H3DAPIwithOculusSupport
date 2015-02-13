@@ -116,7 +116,7 @@
 
 /// Undef if you do not have Python(www.python.org) installed.
 /// PythonScript node will then not be supported.
-/* #undef HAVE_PYTHON */
+#define HAVE_PYTHON
 
 /// Undef if you do not have libcurl(http://sourceforge.net/projects/curl/)
 /// installed. URLs using protocols like http and ftp will then not be 
