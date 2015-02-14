@@ -42,13 +42,7 @@ namespace H3D {
 	
 	using OVR::Sizei;
 
-	void OVRManager::loadCalibrationScript(std::string file_name){
-		calibrationToolsScript.initialize();
-		calibrationToolsScript.loadScript(file_name);
-	}
-
 	void OVRManager::initialise(){
-		loadCalibrationScript("C:\\Users\\Jake\\OneDrive\\PhD\\H3DAndOculus\\calibrationtools.py");
 
 		ovr_Initialize();
 
@@ -223,11 +217,21 @@ namespace H3D {
       	glFrontFace( GL_CW );  
 	}
 
+	Matrix4f OVRManager::getHeadPose(){
+		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Left);
+		OVR::Quatf orientation = OVR::Quatf(headPose.Orientation);
+		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPose.Position.x,-headPose.Position.y,-headPose.Position.z); 
+		return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
+				        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
+				        view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3], 
+				        view.M[3][0], view.M[3][1], view.M[3][2], view.M[3][3]);
+	}
+
 	void OVRManager::setViewMatrix(ovrEyeType eye){
 		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
 		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
-		OVR::Matrix4f camToCalibrationlessSpace = OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * view;
+		OVR::Matrix4f camToCalibrationlessSpace = /*OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) */ view;
 		OVR::Matrix4f camToWorld =camToCalibrationlessSpace * worldToCalibration;
 		glMultMatrixf(getColumnMajorRepresentation(camToWorld));
 	}

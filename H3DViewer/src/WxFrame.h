@@ -35,10 +35,12 @@
 #include <wx/spinctrl.h>
 #include <wx/config.h>
 #include <wx/confbase.h>
+#include <wx/valnum.h>
 
 #include "WxWidgetsWindow.h"
 #include <H3D/GlobalSettings.h>
 #include <H3D/StereoInfo.h>
+#include <H3D/OVRManager.h>
 
 #include <H3D/Group.h>
 #include <H3D/Transform.h>
@@ -240,15 +242,44 @@ DECLARE_EVENT_TABLE()
 class HMDCalibrationDialog: public wxDialog {
   DECLARE_CLASS(HMDCalibrationDialog)
   public:
-  HMDCalibrationDialog(wxWindow* parent );
+  HMDCalibrationDialog(wxWindow* parent, std::shared_ptr< OVRManager >  ovr);
   
   void updateMenuItems();
 
+  void get_samples(wxCommandEvent& event);
+  void compute(wxCommandEvent& event);
+  void apply(wxCommandEvent& event);
+
+  void refreshTopSizer();
+
+  void setDeviceNames(wxString* deviceNames_, int numberOfDevices_);
+
   void OnKeyDown(wxKeyEvent& event);
-  wxBoxSizer *topsizer;
-  wxStaticText *graphics_rate;
-  wxStaticText *haptics_rate;
-  wxStaticText *haptics_time;
+  wxBoxSizer *topSizer;
+
+  wxButton* getSamplesButton;
+  wxTextCtrl* sampleCountEntry;
+  wxButton* computeCalibrationAndSaveButton;
+  wxButton* applyCalibration;
+  wxCheckListBox* deviceChecklist;
+
+  PythonScript calibrationToolsScript;
+
+  int numberOfSamples;
+
+  std::shared_ptr< OVRManager > ovrManager;
+  // HapticDevices
+  wxString *deviceNames;
+  int numberOfDevices;
+
+
+  enum
+  {//TODO: this seems dodge
+    BUTTON_GET_SAMPLES = wxID_HIGHEST + 1,
+    BUTTON_COMPUTE = wxID_HIGHEST + 2,
+    BUTTON_APPLY = wxID_HIGHEST + 3
+  };
+
 //  vector< wxStaticText * > haptics_rate;
 DECLARE_EVENT_TABLE()
 };

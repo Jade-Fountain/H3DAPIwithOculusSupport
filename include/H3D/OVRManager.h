@@ -54,8 +54,7 @@ namespace H3D {
 		OVRManager() : separateEyeTextures(true),
 				   	   near_distance(0.001f),
 					   far_distance(100.0f),
-					   hmd(0),
-					   calibrationToolsScript()
+					   hmd(0)
 					   {
 					   	//Translate in the real world
 					   	worldToCalibration = OVR::Matrix4f::Translation(0,-0.33,-0.310);
@@ -70,7 +69,6 @@ namespace H3D {
 						translationLearningRate = 0.1;
 					   }
 
-		void loadCalibrationScript(std::string file_name);
 
 		void initialise();
 
@@ -98,6 +96,8 @@ namespace H3D {
 
 		void setProjectionMatrix(ovrEyeType eye);
 
+		Matrix4f getHeadPose();
+		
 		void setViewMatrix(ovrEyeType eye);
 
 		void setViewport(ovrEyeType eye);
@@ -123,7 +123,6 @@ namespace H3D {
 		
 		OVR::Matrix4f deltaMat(const OVR::Matrix4f& m);
 	private:		
-		H3D::PythonScript calibrationToolsScript;
 		//TODO comment
 		ovrHmd hmd;
 

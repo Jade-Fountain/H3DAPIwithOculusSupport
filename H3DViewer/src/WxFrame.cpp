@@ -222,7 +222,6 @@ WxFrame::WxFrame( wxWindow *_parent, wxWindowID _id,
   if( disable_plugin_dialog )
     plugins_dialog->DisablePluginsCheckBox->SetValue( true );
   frameRates = new FrameRateDialog( this );
-  hmdCalibrationDialog = new HMDCalibrationDialog( this );
 
   current_viewpoint = (X3DViewpointNode *) NULL;
   mydevice = (DeviceInfo *) NULL;
@@ -482,6 +481,8 @@ WxFrame::WxFrame( wxWindow *_parent, wxWindowID _id,
   ks->actionKeyPress->route( handle_action_key );
 
   scene->window->push_back( glwindow );
+  hmdCalibrationDialog = new HMDCalibrationDialog( this, glwindow->ovrManager);
+
   // Create settings dialog
   settings = new SettingsDialog(this );
   
@@ -2083,9 +2084,16 @@ void WxFrame::ShowHMDCalibration(wxCommandEvent & event)
   --Include apply button*/
   // set labels to make sure they are the right size when shown
   // (otherwise some numbers may not be displayed)
-  frameRates->graphics_rate->SetLabel( wxT("100") );
-  frameRates->haptics_rate->SetLabel( wxT("1000") );
-  frameRates->haptics_time->SetLabel( wxT("100") );
+  wxString deviceNames[10]; // MAX SUPPORT 10 Devices
+  int numberOfDevices = 0;
+  DeviceInfo::DeviceInfoList deviceList = DeviceInfo::getAllDeviceInfos();
+  for( DeviceInfo::DeviceInfoList::iterator i = deviceList.begin();
+       i != deviceList.end(); ++i ) {
+  //H3DHapticsDevice *d = static_cast< H3DHapticsDevice * >();
+    deviceNames[numberOfDevices] = (*i)->device->getName();
+    numberOfDevices++;
+  }
+  hmdCalibrationDialog->setDeviceNames(deviceNames,numberOfDevices);
   if (!(check_dialogs_position_because_of_fullscreen_and_not_quadro &&
       GetScreenRect().Intersects( hmdCalibrationDialog->GetScreenRect() ) ) ) {
     if( hmdCalibrationDialog->IsIconized() )
@@ -3086,7 +3094,6 @@ FrameRateDialog::FrameRateDialog(wxWindow* win ) :
 }
 
 void FrameRateDialog::OnKeyDown(wxKeyEvent& event) {
-  wxMessageBox(wxT("hello from  framerate"));
   if (event.GetKeyCode() == WXK_ESCAPE || event.GetKeyCode() == WXK_F9) {
     Hide();
   }
@@ -3160,34 +3167,105 @@ IMPLEMENT_CLASS(HMDCalibrationDialog, wxDialog)
 
 BEGIN_EVENT_TABLE(HMDCalibrationDialog, wxDialog)
   EVT_KEY_DOWN(HMDCalibrationDialog::OnKeyDown)
+  EVT_BUTTON(BUTTON_GET_SAMPLES,HMDCalibrationDialog::get_samples)
+  EVT_BUTTON(BUTTON_COMPUTE,HMDCalibrationDialog::compute)
+  EVT_BUTTON(BUTTON_APPLY,HMDCalibrationDialog::apply)
 END_EVENT_TABLE()
 
-HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win ) :
+HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRManager > ovr) :
   wxDialog (win, wxID_ANY, wxT("Frame rates"), wxDefaultPosition, wxDefaultSize,
-            wxDEFAULT_DIALOG_STYLE) {
+            wxDEFAULT_DIALOG_STYLE),
+            calibrationToolsScript(),
+            numberOfSamples(3),
+            ovrManager(ovr),
+            deviceChecklist(NULL) {
 
-  topsizer = new wxBoxSizer( wxVERTICAL );
+//Create top level formatter box
+  topSizer = new wxBoxSizer( wxVERTICAL );
+  
+  // deviceChecklist = new wxCheckListBox();  
 
+
+
+//Load python script
+  calibrationToolsScript.initialize();
+  calibrationToolsScript.loadScript("C:\\Users\\Jake\\OneDrive\\PhD\\H3DAndOculus\\calibrationtools.py");//TODO make this local somehow
+  refreshTopSizer();
+
+}
+
+void HMDCalibrationDialog::refreshTopSizer(){
   updateMenuItems();
 
   Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(HMDCalibrationDialog::OnKeyDown));
 
-  SetSizer( topsizer );      // use the sizer for layout
+  SetSizer( topSizer );      // use the sizer for layout
 
-  topsizer->SetSizeHints( this );   // set size hints to honour minimum size
+  topSizer->SetSizeHints( this );   // set size hints to honour minimum size
+
   Layout();
 }
 
 void HMDCalibrationDialog::OnKeyDown(wxKeyEvent& event) {
-  wxMessageBox(wxT("hello from  framerate"));
+  wxMessageBox(wxT("hello from  HMDCalib"));
   if (event.GetKeyCode() == WXK_ESCAPE || event.GetKeyCode() == WXK_F9) {
     Hide();
   }
 }
 
-void HMDCalibrationDialog::updateMenuItems() {
-  
+void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDevices_){
+  if (deviceChecklist == NULL){
+  //Devices
+    deviceNames = deviceNames;
+    numberOfDevices = numberOfDevices;
+    deviceChecklist = new wxCheckListBox(this,wxID_ANY,wxDefaultPosition,wxDefaultSize,numberOfDevices,deviceNames);
+    topSizer->Add(deviceChecklist, 0, wxALL|wxALIGN_RIGHT, 5);
+  //Sample count setting
+    wxFloatingPointValidator<int>
+      validator(2, &numberOfSamples, wxNUM_VAL_ZERO_AS_BLANK);
+    sampleCountEntry = new wxTextCtrl(this, wxID_ANY, "3", wxDefaultPosition, wxDefaultSize, 0, validator);
+
+  //Set buttons
+    getSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Get Samples");
+
+    topSizer->Add(getSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
+
+    topSizer->Add(sampleCountEntry, 0, wxALL|wxALIGN_RIGHT, 5);
+    
+    computeCalibrationAndSaveButton = new wxButton(this, BUTTON_COMPUTE, "Compute And Save");
+
+    topSizer->Add(computeCalibrationAndSaveButton, 0, wxALL|wxALIGN_RIGHT, 5);
+
+    applyCalibration = new wxButton(this, BUTTON_APPLY, "Apply");
+
+    topSizer->Add(applyCalibration, 0, wxALL|wxALIGN_RIGHT, 5);
+    refreshTopSizer();
+  }
 }
+
+void HMDCalibrationDialog::updateMenuItems() {
+
+}
+
+void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
+  DeviceInfo::DeviceInfoList devices = DeviceInfo::getAllDeviceInfos();
+  if(devices.begin() != devices.end()){
+	  DeviceInfo::DeviceInfoList::iterator device_iter = devices.begin();
+	  H3DHapticsDevice * device = (H3DHapticsDevice*)((*device_iter)->device->front());
+	  wxMessageBox((std::to_string(static_cast<long long>( device->trackerPosition->getValue().x))));
+  } else{
+	wxMessageBox(wxT("NO DEVICE DETECTED OR SCENE NOT LOADED!"));	
+  }
+}
+
+void HMDCalibrationDialog::compute(wxCommandEvent& event){
+  wxMessageBox(wxT("hello from  compute"));
+}
+
+void HMDCalibrationDialog::apply(wxCommandEvent& event){
+  wxMessageBox(wxT("hello from  apply"));
+}
+
 
 
 //-------------

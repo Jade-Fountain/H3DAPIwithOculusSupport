@@ -336,7 +336,7 @@ namespace H3D {
     auto_ptr< SFViewpoint > viewpoint;
 
     ///Manage oculus hardware, headtracking and stereo rendering
-	auto_ptr< H3D::OVRManager > ovrManager;
+	shared_ptr< H3D::OVRManager > ovrManager;
 	
     /// If set to true changes of cursor is totally up to the user of
     /// the window by changing the cursorType. If false, H3D API will 
