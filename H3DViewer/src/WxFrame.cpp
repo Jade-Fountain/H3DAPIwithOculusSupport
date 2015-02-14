@@ -2090,7 +2090,7 @@ void WxFrame::ShowHMDCalibration(wxCommandEvent & event)
   for( DeviceInfo::DeviceInfoList::iterator i = deviceList.begin();
        i != deviceList.end(); ++i ) {
   //H3DHapticsDevice *d = static_cast< H3DHapticsDevice * >();
-    deviceNames[numberOfDevices] = (*i)->device->getName();
+	deviceNames[numberOfDevices] = ((ParsableField*) (*i)->device->front()->getField("deviceModelType"))->getValueAsString();
     numberOfDevices++;
   }
   hmdCalibrationDialog->setDeviceNames(deviceNames,numberOfDevices);
@@ -3214,10 +3214,11 @@ void HMDCalibrationDialog::OnKeyDown(wxKeyEvent& event) {
 }
 
 void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDevices_){
+  deviceNames = deviceNames_;
+  numberOfDevices = numberOfDevices_;
+  //TODO: update properly
   if (deviceChecklist == NULL){
   //Devices
-    deviceNames = deviceNames;
-    numberOfDevices = numberOfDevices;
     deviceChecklist = new wxCheckListBox(this,wxID_ANY,wxDefaultPosition,wxDefaultSize,numberOfDevices,deviceNames);
     topSizer->Add(deviceChecklist, 0, wxALL|wxALIGN_RIGHT, 5);
   //Sample count setting
@@ -3252,7 +3253,8 @@ void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
   if(devices.begin() != devices.end()){
 	  DeviceInfo::DeviceInfoList::iterator device_iter = devices.begin();
 	  H3DHapticsDevice * device = (H3DHapticsDevice*)((*device_iter)->device->front());
-	  wxMessageBox((std::to_string(static_cast<long long>( device->trackerPosition->getValue().x))));
+    wxMessageBox(((ParsableField*) device->getField("trackerPosition"))->getValueAsString());
+	  wxMessageBox(((ParsableField*) device->getField("trackerOrientation"))->getValueAsString());
   } else{
 	wxMessageBox(wxT("NO DEVICE DETECTED OR SCENE NOT LOADED!"));	
   }
