@@ -220,7 +220,7 @@ namespace H3D {
 	Matrix4f OVRManager::getHeadPose(){
 		ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Left);
 		OVR::Quatf orientation = OVR::Quatf(headPose.Orientation);
-		OVR::Matrix4f view = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPose.Position.x,-headPose.Position.y,-headPose.Position.z); 
+		OVR::Matrix4f view = OVR::Matrix4f::Translation(headPose.Position.x,headPose.Position.y,headPose.Position.z) * OVR::Matrix4f(orientation); 
 		return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
 				        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
 				        view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3], 

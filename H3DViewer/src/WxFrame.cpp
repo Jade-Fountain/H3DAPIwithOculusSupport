@@ -3168,6 +3168,7 @@ IMPLEMENT_CLASS(HMDCalibrationDialog, wxDialog)
 BEGIN_EVENT_TABLE(HMDCalibrationDialog, wxDialog)
   EVT_KEY_DOWN(HMDCalibrationDialog::OnKeyDown)
   EVT_BUTTON(BUTTON_GET_SAMPLES,HMDCalibrationDialog::get_samples)
+  EVT_BUTTON(BUTTON_CLEAR,HMDCalibrationDialog::clear_samples)
   EVT_BUTTON(BUTTON_COMPUTE,HMDCalibrationDialog::compute)
   EVT_BUTTON(BUTTON_APPLY,HMDCalibrationDialog::apply)
 END_EVENT_TABLE()
@@ -3176,15 +3177,14 @@ HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRMa
   wxDialog (win, wxID_ANY, wxT("Frame rates"), wxDefaultPosition, wxDefaultSize,
             wxDEFAULT_DIALOG_STYLE),
             calibrationToolsScript(),
-            numberOfSamples(3),
+            numberOfSamples(0),
             ovrManager(ovr),
-            deviceChecklist(NULL) {
+            deviceChecklist(NULL),
+            samples(2)  {
 
 //Create top level formatter box
   topSizer = new wxBoxSizer( wxVERTICAL );
   
-  // deviceChecklist = new wxCheckListBox();  
-
 
 
 //Load python script
@@ -3227,9 +3227,13 @@ void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDe
     sampleCountEntry = new wxTextCtrl(this, wxID_ANY, "3", wxDefaultPosition, wxDefaultSize, 0, validator);
 
   //Set buttons
-    getSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Get Samples");
+    getSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Get Sample");
 
     topSizer->Add(getSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
+
+    clearSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Clear Samples");
+
+    topSizer->Add(clearSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
 
     topSizer->Add(sampleCountEntry, 0, wxALL|wxALIGN_RIGHT, 5);
     
@@ -3244,28 +3248,185 @@ void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDe
   }
 }
 
+std::vector<float> HMDCalibrationDialog::parseFloats(std::string str){
+  std::vector<float> result;
+
+  std::stringstream ss(str);
+
+  float i;
+
+  while (ss >> i)
+  {
+      result.push_back(i);
+
+      if (ss.peek() == ',' || ss.peek() == ' ')
+        ss.ignore();
+  }
+  return result;
+}
+
+Quaternion HMDCalibrationDialog::getQuatFromString(std::string s){  
+  std::vector<float> q = parseFloats(s);
+  return Quaternion(q[0],q[1],q[2],q[3]);
+}
+
+Vec3f HMDCalibrationDialog::getVecFromString(std::string s){  
+	std::vector<float> q = parseFloats(s);
+	return Vec3f(q[0],q[1],q[2]);
+}
+
+// bool HMDCalibrationDialog::checkIfNovel(const Matrix4f& m, const std::vector<Matrix4f>&)
+
+
 void HMDCalibrationDialog::updateMenuItems() {
 
 }
 
-void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
+Matrix4f HMDCalibrationDialog::getDeviceMatrix(){
   DeviceInfo::DeviceInfoList devices = DeviceInfo::getAllDeviceInfos();
   if(devices.begin() != devices.end()){
-	  DeviceInfo::DeviceInfoList::iterator device_iter = devices.begin();
-	  H3DHapticsDevice * device = (H3DHapticsDevice*)((*device_iter)->device->front());
-    wxMessageBox(((ParsableField*) device->getField("trackerPosition"))->getValueAsString());
-	  wxMessageBox(((ParsableField*) device->getField("trackerOrientation"))->getValueAsString());
+    DeviceInfo::DeviceInfoList::iterator device_iter = devices.begin();
+    H3DHapticsDevice * device = (H3DHapticsDevice*)((*device_iter)->device->front());
+    Quaternion rot = getQuatFromString(((ParsableField*) device->getField("trackerOrientation"))->getValueAsString());
+    Vec3f t = getVecFromString(((ParsableField*) device->getField("trackerPosition"))->getValueAsString());
+    Matrix4f T(t,Rotation(rot));
+    return T;
+//    std::ostringstream ss;
+//    ss << t[0] << " " << t[1] << " " << t[2];
+//   wxMessageBox(ss.str());
   } else{
-	wxMessageBox(wxT("NO DEVICE DETECTED OR SCENE NOT LOADED!"));	
+    wxMessageBox(wxT("NO DEVICE DETECTED OR SCENE NOT LOADED!"));
+    return Matrix4f();
   }
 }
 
+void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
+  Matrix4f deviceMat = getDeviceMatrix();
+  Matrix4f hmdMat = deviceMat; //ovrManager->getHeadPose();
+  
+  samples[HMD].push_back(hmdMat);
+  samples[1].push_back(deviceMat);
+
+  numberOfSamples = samples.size();
+  refreshTopSizer();
+
+  std::ostringstream ss;
+  ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
+  ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
+  ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
+  ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
+  wxMessageBox(ss.str());
+  std::ostringstream ss2;
+  ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
+  ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
+  ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
+  ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
+  wxMessageBox(ss2.str());
+  //TODO: finish auto sampler:
+  // for (auto& s : samples){
+  //   s.clear();
+  // }
+  // while (samples[HMD].size() < numberOfSamples){
+  //   Matrix4f deviceMat = getDeviceMatrix();
+  //   // Matrix4f hmdMat = getHMDMatrix();
+  //   if(checkIfNovel(deviceMat)){
+  //     // samples[HMD].push_back(hmdMat);
+  //     samples[1].push_back(deviceMat);
+  //   }
+  // }
+}
+
+void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
+  for (int i = 0; i < samples.size(); i++){
+    samples[i].clear();
+  }
+  numberOfSamples = samples.size();
+  refreshTopSizer();
+}
+
+PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
+  PyObject *list = PyTuple_New(matList.size() * 16);
+  for (int i = 0; i < matList.size(); i++){
+    for(int j = 0; j < 4; j ++){
+	    for(int k = 0; k < 4; k ++){
+		    PyObject* value = Py_BuildValue("f",matList[i][j][k]);
+        PyTuple_SetItem(list, i * 16 + j + 4 * k,value);
+      }
+    }
+  }
+  return list;
+}
+
+PyObject* HMDCalibrationDialog::loadCalibrationMethod(){
+   PyObject *pName, *pModule, *pDict, *pFunc;
+  Console(4) << __LINE__ << std::endl;
+  // Build the name object
+  pName = PyString_FromString((char*)"calibrationtools");
+  if (pName == NULL){
+    PyErr_Print();
+    return NULL;
+  }
+  
+  Console(4) << __LINE__ << pName << std::endl;
+  // Load the module object
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+   //CHRASH HERE
+  pModule = PyImport_Import(pName);
+  if (pModule == NULL){
+    PyErr_Print();
+    return NULL;
+  }
+  Console(4) << __LINE__ << std::endl;
+  
+
+  // pDict is a borrowed reference 
+  pDict = PyModule_GetDict(pModule);
+  if (pDict == NULL){
+    PyErr_Print();
+    return NULL;
+  }
+  Console(4) << __LINE__ << std::endl;
+  
+
+  // pFunc is also a borrowed reference 
+  pFunc = PyDict_GetItemString(pDict, (char*)"calibrateHMD");
+  if (pFunc == NULL){
+    PyErr_Print();
+    return NULL;
+  }
+  Console(4) << __LINE__ << std::endl;
+
+  
+  Console(4) << __LINE__ << std::endl;
+  return pFunc;
+}
+
 void HMDCalibrationDialog::compute(wxCommandEvent& event){
-  wxMessageBox(wxT("hello from  compute"));
+  PyObject* samplesA = createSampleList(samples[HMD]);
+  PyObject* samplesB = createSampleList(samples[1]);
+  if(samplesA){
+    wxMessageBox(wxT("samplesA loaded!"));    
+  }
+  if(samplesB){
+    wxMessageBox(wxT("samplesB loaded!"));    
+  }
+  Console(4) << __LINE__ << std::endl;
+  PyObject* calibrationMethod = loadCalibrationMethod();
+  Py_DECREF(samplesA);
+  Py_DECREF(samplesB);
+  refreshTopSizer();
 }
 
 void HMDCalibrationDialog::apply(wxCommandEvent& event){
   wxMessageBox(wxT("hello from  apply"));
+  refreshTopSizer();
 }
 
 

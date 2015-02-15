@@ -52,6 +52,8 @@
 #include <H3D/X3D.h>
 #include <H3D/PeriodicUpdate.h>
 
+#include <H3D/PythonTypes.h>
+
 #include <H3DUtil/Console.h>
 
 #include "WxConsoleDialog.h"
@@ -247,6 +249,7 @@ class HMDCalibrationDialog: public wxDialog {
   void updateMenuItems();
 
   void get_samples(wxCommandEvent& event);
+  void clear_samples(wxCommandEvent& event);
   void compute(wxCommandEvent& event);
   void apply(wxCommandEvent& event);
 
@@ -254,10 +257,28 @@ class HMDCalibrationDialog: public wxDialog {
 
   void setDeviceNames(wxString* deviceNames_, int numberOfDevices_);
 
+  PyObject* createSampleList(std::vector<Matrix4f> matList);
+  PyObject* loadCalibrationMethod();
+
   void OnKeyDown(wxKeyEvent& event);
+
+  //Utility and computation 
+  std::vector<float> parseFloats(std::string str);
+
+  Quaternion getQuatFromString(std::string s);
+
+  Vec3f getVecFromString(std::string s);
+
+  Matrix4f getDeviceMatrix();
+
+  std::vector<std::vector<Matrix4f>> samples;
+  static const int HMD = 0;
+
+  //Members
   wxBoxSizer *topSizer;
 
   wxButton* getSamplesButton;
+  wxButton* clearSamplesButton;
   wxTextCtrl* sampleCountEntry;
   wxButton* computeCalibrationAndSaveButton;
   wxButton* applyCalibration;
@@ -277,7 +298,8 @@ class HMDCalibrationDialog: public wxDialog {
   {//TODO: this seems dodge
     BUTTON_GET_SAMPLES = wxID_HIGHEST + 1,
     BUTTON_COMPUTE = wxID_HIGHEST + 2,
-    BUTTON_APPLY = wxID_HIGHEST + 3
+    BUTTON_APPLY = wxID_HIGHEST + 3,
+    BUTTON_CLEAR = wxID_HIGHEST + 4
   };
 
 //  vector< wxStaticText * > haptics_rate;
