@@ -3345,83 +3345,144 @@ void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
 }
 
 PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
-  PyObject *list = PyTuple_New(matList.size() * 16);
-  for (int i = 0; i < matList.size(); i++){
+  Console(4) << __LINE__ << std::endl;
+  int nSamples = matList.size();
+  Console(4) << __LINE__ << std::endl;
+  npy_intp sizes[3] = {nSamples,4,4};
+  Console(4) << __LINE__ << std::endl;
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  PyObject* list = PyArray_ZEROS(nSamples, sizes, NPY_FLOAT, 0);
+  Console(4) << __LINE__ << std::endl;
+  for (int i = 0; i < nSamples; i++){
+  Console(4) << __LINE__ << std::endl;
     for(int j = 0; j < 4; j ++){
-	    for(int k = 0; k < 4; k ++){
-		    PyObject* value = Py_BuildValue("f",matList[i][j][k]);
-        PyTuple_SetItem(list, i * 16 + j + 4 * k,value);
+  Console(4) << __LINE__ << std::endl;
+      for(int k = 0; k < 4; k ++){
+        //Create value to write out to numpy array
+  Console(4) << __LINE__ << std::endl;
+        PyObject* value = Py_BuildValue("f",matList[i][j][k]);
+        //Get pointer to list[i][j][k]
+  Console(4) << __LINE__ << std::endl;
+        void* place = PyArray_GETPTR3(list, i, j, k);
+        //Set  list[i][j][k] = matList[i][j][k]
+  Console(4) << __LINE__ << std::endl;
+        PyArray_SETITEM(list, place, value);
       }
     }
   }
+  Console(4) << __LINE__ << std::endl;
   return list;
 }
 
-PyObject* HMDCalibrationDialog::loadCalibrationMethod(){
-   PyObject *pName, *pModule, *pDict, *pFunc;
-  Console(4) << __LINE__ << std::endl;
-  // Build the name object
-  pName = PyString_FromString((char*)"calibrationtools");
-  if (pName == NULL){
-    PyErr_Print();
-    return NULL;
+std::vector<Matrix4f> HMDCalibrationDialog::getMatrices(PyObject* tuple){
+  int nMats = PyTuple_GET_SIZE(tuple);
+  std::vector<Matrix4f> result(nMats); 
+  for (int i = 0; i < nMats; i++){
+    PyObject *mat = PyTuple_GetItem(tuple,i);
+    for(int j = 0; j < 4; j ++){
+      for(int k = 0; k < 4; k ++){
+        void* place = PyArray_GETPTR2(mat, j, k);
+        PyObject *value = PyArray_GETITEM(mat,place);
+        double d = PyFloat_AsDouble(value);
+        result[i][j][k] = d;
+      }
+    }
   }
-  
-  Console(4) << __LINE__ << pName << std::endl;
-  // Load the module object
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-   //CHRASH HERE
-  pModule = PyImport_Import(pName);
-  if (pModule == NULL){
-    PyErr_Print();
-    return NULL;
-  }
-  Console(4) << __LINE__ << std::endl;
-  
+  return result;
+}
 
-  // pDict is a borrowed reference 
-  pDict = PyModule_GetDict(pModule);
-  if (pDict == NULL){
-    PyErr_Print();
-    return NULL;
-  }
+PyObject* HMDCalibrationDialog::loadMethod(std::string module_name, std::string function_name){
   Console(4) << __LINE__ << std::endl;
-  
+  PyObject *pModule, *pFunc;
+
+  // Load the module object
+  Console(4) << __LINE__ << std::endl;
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  pModule = PyImport_ImportModule(module_name.c_str());
+  Console(4) << __LINE__ << std::endl;
+  PyErr_Print();
 
   // pFunc is also a borrowed reference 
-  pFunc = PyDict_GetItemString(pDict, (char*)"calibrateHMD");
-  if (pFunc == NULL){
-    PyErr_Print();
-    return NULL;
-  }
   Console(4) << __LINE__ << std::endl;
+  pFunc = PyObject_GetAttrString(pModule, function_name.c_str());
+  Console(4) << __LINE__ << std::endl;
+  PyErr_Print();
 
-  
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(pModule);
+
   Console(4) << __LINE__ << std::endl;
   return pFunc;
 }
 
+int HMDCalibrationDialog::initNumpyArray(){
+	import_array1(0);
+	return -1;
+}
+
 void HMDCalibrationDialog::compute(wxCommandEvent& event){
-  PyObject* samplesA = createSampleList(samples[HMD]);
-  PyObject* samplesB = createSampleList(samples[1]);
-  if(samplesA){
-    wxMessageBox(wxT("samplesA loaded!"));    
-  }
-  if(samplesB){
-    wxMessageBox(wxT("samplesB loaded!"));    
-  }
   Console(4) << __LINE__ << std::endl;
-  PyObject* calibrationMethod = loadCalibrationMethod();
-  Py_DECREF(samplesA);
-  Py_DECREF(samplesB);
-  refreshTopSizer();
+  Py_Initialize();
+  Console(4) << __LINE__ << std::endl;
+  //initNumpyArray();
+  //printString();
+  Console(4) << __LINE__ << std::endl;
+  PyObject* pCalibrationMethod = loadMethod("numpy","array");
+  Console(4) << __LINE__ << std::endl;
+  PyErr_Print();
+
+  Console(4) << __LINE__ << std::endl;
+  PyObject* pSamplesA = createSampleList(samples[0]);
+  Console(4) << __LINE__ << std::endl;
+  PyObject* pSamplesB = createSampleList(samples[1]);
+
+    
+  //PyEval_CallObject(pPrint, pSamplesA);
+  //PyEval_CallObject(pPrint, pSamplesB);
+  Console(4) << __LINE__ << std::endl;
+  PyObject *args = PyTuple_New(2);
+  Console(4) << __LINE__ << std::endl;
+  PyTuple_SetItem(args,0,pSamplesA);
+  Console(4) << __LINE__ << std::endl;
+  PyTuple_SetItem(args,1,pSamplesB);  
+
+  //Call main calibration method
+  Console(4) << __LINE__ << std::endl;
+  PyObject* pXpY = PyEval_CallObject(pCalibrationMethod,args);
+
+  //Convert result to cpp objects
+  Console(4) << __LINE__ << std::endl;
+  std::vector<Matrix4f> XY = getMatrices(pXpY);
+
+  Console(4) << __LINE__ << std::endl;
+  Matrix4f deviceToHMD = XY[0];
+  Console(4) << __LINE__ << std::endl;
+  Matrix4f deviceBaseToHMDBase = XY[1];
+
+  Console(4) << __LINE__ << std::endl;
+  Console(4) << "deviceBaseToHMDBase = " << deviceBaseToHMDBase << std::endl;
+
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(pSamplesA);
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(pSamplesB);
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(args);
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(pXpY);
+  Console(4) << __LINE__ << std::endl;
+  Py_DECREF(pCalibrationMethod);
+  Console(4) << __LINE__ << std::endl;
+  Py_Finalize();
 }
 
 void HMDCalibrationDialog::apply(wxCommandEvent& event){

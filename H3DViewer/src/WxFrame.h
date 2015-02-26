@@ -64,6 +64,10 @@
 #include "H3DViewerPluginsDialog.h"
 #include <H3DViewerConfig.h>
 
+#include <Python.h>
+#include <arrayobject.h>
+#include <npy_common.h>
+
 using namespace std;
 using namespace H3D;
 
@@ -248,6 +252,7 @@ class HMDCalibrationDialog: public wxDialog {
   
   void updateMenuItems();
 
+  void OnKeyDown(wxKeyEvent& event);
   void get_samples(wxCommandEvent& event);
   void clear_samples(wxCommandEvent& event);
   void compute(wxCommandEvent& event);
@@ -257,12 +262,16 @@ class HMDCalibrationDialog: public wxDialog {
 
   void setDeviceNames(wxString* deviceNames_, int numberOfDevices_);
 
+//Python interface methods
   PyObject* createSampleList(std::vector<Matrix4f> matList);
-  PyObject* loadCalibrationMethod();
 
-  void OnKeyDown(wxKeyEvent& event);
+  std::vector<Matrix4f> getMatrices(PyObject* tuple);
 
-  //Utility and computation 
+  PyObject* loadMethod(std::string module_name, std::string function_name);
+  
+  int initNumpyArray();
+
+//Utility and computation 
   std::vector<float> parseFloats(std::string str);
 
   Quaternion getQuatFromString(std::string s);
