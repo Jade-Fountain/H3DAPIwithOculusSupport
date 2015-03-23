@@ -3304,18 +3304,18 @@ void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
   numberOfSamples = samples.size();
   refreshTopSizer();
 
-  std::ostringstream ss;
-  ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
-  ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
-  ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
-  ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
-  wxMessageBox(ss.str());
-  std::ostringstream ss2;
-  ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
-  ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
-  ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
-  ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
-  wxMessageBox(ss2.str());
+  // std::ostringstream ss;
+  // ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
+  // ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
+  // ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
+  // ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
+  // wxMessageBox(ss.str());
+  // std::ostringstream ss2;
+  // ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
+  // ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
+  // ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
+  // ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
+  // wxMessageBox(ss2.str());
   //TODO: finish auto sampler:
   // for (auto& s : samples){
   //   s.clear();
@@ -3339,35 +3339,26 @@ void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
 }
 
 PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
-  Console(4) << __LINE__ << std::endl;
   int nSamples = matList.size();
-  Console(4) << __LINE__ << std::endl;
   npy_intp sizes[3] = {nSamples,4,4};
-  Console(4) << __LINE__ << std::endl;
   PyObject* list = PyArray_ZEROS(nSamples, sizes, NPY_FLOAT, 0);
-  Console(4) << __LINE__ << std::endl;
+  //TODO: why does this only work with >3 samples??
   for (int i = 0; i < nSamples; i++){
-  Console(4) << __LINE__ << std::endl;
     for(int j = 0; j < 4; j ++){
-  Console(4) << __LINE__ << std::endl;
       for(int k = 0; k < 4; k ++){
         //Create value to write out to numpy array
-  Console(4) << __LINE__ << std::endl;
         PyObject* value = Py_BuildValue("f",matList[i][j][k]);
         //Get pointer to list[i][j][k]
-  Console(4) << __LINE__ << std::endl;
         PyErr_Print();
         void* place = PyArray_GETPTR3(list, i, j, k);
         //Set  list[i][j][k] = matList[i][j][k]
-  Console(4) << "Place pointer = " << place  << std::endl;
-  Console(4) << __LINE__ << std::endl;
         PyErr_Print();
 
         PyArray_SETITEM(list, place, value);
+        Py_DECREF(value);
       }
     }
   }
-  Console(4) << __LINE__ << std::endl;
   return list;
 }
 
@@ -3389,28 +3380,20 @@ std::vector<Matrix4f> HMDCalibrationDialog::getMatrices(PyObject* tuple){
 }
 
 PyObject* HMDCalibrationDialog::loadMethod(std::string module_name, std::string function_name){
-  Console(4) << __LINE__ << std::endl;
   PyObject *pModule, *pFunc;
 
   // Load the module object
-  Console(4) << __LINE__ << std::endl;
   PyErr_Print();
   
-  Console(4) << module_name << std::endl;
   pModule = PyImport_ImportModule(module_name.c_str());
-  Console(4) << __LINE__ << std::endl;
   PyErr_Print();
 
   // pFunc is also a borrowed reference 
-  Console(4) << __LINE__ << std::endl;
   pFunc = PyObject_GetAttrString(pModule, function_name.c_str());
-  Console(4) << __LINE__ << std::endl;
   PyErr_Print();
 
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pModule);
 
-  Console(4) << __LINE__ << std::endl;
   return pFunc;
 }
 
@@ -3420,58 +3403,39 @@ int HMDCalibrationDialog::initNumpyArray(){
 }
 
 void HMDCalibrationDialog::compute(wxCommandEvent& event){
-  Console(4) << __LINE__ << std::endl;
   Py_Initialize();
-  Console(4) << __LINE__ << std::endl;
   initNumpyArray();
   //printString();
-  Console(4) << __LINE__ << std::endl;
-  PyObject* pCalibrationMethod = loadMethod("numpy","array");
-  Console(4) << __LINE__ << std::endl;
+  PyObject* pCalibrationMethod = loadMethod("calibrationtools","solveHomogeneousDualSylvester");
   PyErr_Print();
 
-  Console(4) << __LINE__ << std::endl;
   PyObject* pSamplesA = createSampleList(samples[0]);
-  Console(4) << __LINE__ << std::endl;
   PyObject* pSamplesB = createSampleList(samples[1]);
 
     
   //PyEval_CallObject(pPrint, pSamplesA);
   //PyEval_CallObject(pPrint, pSamplesB);
-  Console(4) << __LINE__ << std::endl;
   PyObject *args = PyTuple_New(2);
-  Console(4) << __LINE__ << std::endl;
   PyTuple_SetItem(args,0,pSamplesA);
-  Console(4) << __LINE__ << std::endl;
   PyTuple_SetItem(args,1,pSamplesB);  
 
   //Call main calibration method
-  Console(4) << __LINE__ << std::endl;
   PyObject* pXpY = PyEval_CallObject(pCalibrationMethod,args);
 
   //Convert result to cpp objects
-  Console(4) << __LINE__ << std::endl;
   std::vector<Matrix4f> XY = getMatrices(pXpY);
 
-  Console(4) << __LINE__ << std::endl;
   Matrix4f deviceToHMD = XY[0];
-  Console(4) << __LINE__ << std::endl;
   Matrix4f deviceBaseToHMDBase = XY[1];
 
-  Console(4) << __LINE__ << std::endl;
-  Console(4) << "deviceBaseToHMDBase = " << deviceBaseToHMDBase << std::endl;
+  Console(4) << "deviceToHMD = \n" << deviceToHMD << std::endl;
+  Console(4) << "deviceBaseToHMDBase = \n" << deviceBaseToHMDBase << std::endl;
 
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pSamplesA);
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pSamplesB);
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(args);
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pXpY);
-  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pCalibrationMethod);
-  Console(4) << __LINE__ << std::endl;
   Py_Finalize();
 }
 
