@@ -98,11 +98,10 @@ namespace H3D {
 		Matrix4f getHeadPose(){
 			if(!hmd) return Matrix4f();
 			Beep(500,500);
-			ovrPosef headPose = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds()).HeadPose.ThePose;
+			//TODO: change to head pose exactly
+			OVR::Quatf orientation = OVR::Quatf(headPoses[ovrEye_Left].Orientation);
 			Beep(500,500);
-			OVR::Quatf orientation = OVR::Quatf(headPose.Orientation);
-			Beep(500,500);
-			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPose.Position.x,headPose.Position.y,headPose.Position.z) * OVR::Matrix4f(orientation); 
+			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPoses[ovrEye_Left].Position.x,headPoses[ovrEye_Left].Position.y,headPoses[ovrEye_Left].Position.z) * OVR::Matrix4f(orientation); 
 			Beep(500,500);
 			return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
 					        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
