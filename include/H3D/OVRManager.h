@@ -96,9 +96,14 @@ namespace H3D {
 		void setProjectionMatrix(ovrEyeType eye);
 
 		Matrix4f getHeadPose(){
-			ovrPosef headPose = ovrHmd_GetHmdPosePerEye(hmd, ovrEye_Left);
+			if(!hmd) return Matrix4f();
+			Beep(500,500);
+			ovrPosef headPose = ovrHmd_GetTrackingState(hmd, ovr_GetTimeInSeconds()).HeadPose.ThePose;
+			Beep(500,500);
 			OVR::Quatf orientation = OVR::Quatf(headPose.Orientation);
+			Beep(500,500);
 			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPose.Position.x,headPose.Position.y,headPose.Position.z) * OVR::Matrix4f(orientation); 
+			Beep(500,500);
 			return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
 					        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
 					        view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3], 
