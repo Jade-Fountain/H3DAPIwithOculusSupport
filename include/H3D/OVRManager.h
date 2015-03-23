@@ -35,7 +35,6 @@
 
 #include "H3D/StereoInfo.h"
 #include "H3D/X3DViewpointNode.h"
-#include "H3D\PythonScript.h"
 #include <GL/glew.h>
 #include "OVR_CAPI_GL.h"
 

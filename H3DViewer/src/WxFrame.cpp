@@ -3176,7 +3176,6 @@ END_EVENT_TABLE()
 HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRManager > ovr) :
   wxDialog (win, wxID_ANY, wxT("Frame rates"), wxDefaultPosition, wxDefaultSize,
             wxDEFAULT_DIALOG_STYLE),
-            calibrationToolsScript(),
             numberOfSamples(0),
             ovrManager(ovr),
             deviceChecklist(NULL),
@@ -3185,11 +3184,6 @@ HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRMa
 //Create top level formatter box
   topSizer = new wxBoxSizer( wxVERTICAL );
   
-
-
-//Load python script
-  calibrationToolsScript.initialize();
-  calibrationToolsScript.loadScript("C:\\Users\\Jake\\OneDrive\\PhD\\H3DAndOculus\\calibrationtools.py");//TODO make this local somehow
   refreshTopSizer();
 
 }
@@ -3350,11 +3344,6 @@ PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
   Console(4) << __LINE__ << std::endl;
   npy_intp sizes[3] = {nSamples,4,4};
   Console(4) << __LINE__ << std::endl;
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
   PyObject* list = PyArray_ZEROS(nSamples, sizes, NPY_FLOAT, 0);
   Console(4) << __LINE__ << std::endl;
   for (int i = 0; i < nSamples; i++){
@@ -3367,9 +3356,13 @@ PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
         PyObject* value = Py_BuildValue("f",matList[i][j][k]);
         //Get pointer to list[i][j][k]
   Console(4) << __LINE__ << std::endl;
+        PyErr_Print();
         void* place = PyArray_GETPTR3(list, i, j, k);
         //Set  list[i][j][k] = matList[i][j][k]
+  Console(4) << "Place pointer = " << place  << std::endl;
   Console(4) << __LINE__ << std::endl;
+        PyErr_Print();
+
         PyArray_SETITEM(list, place, value);
       }
     }
@@ -3401,12 +3394,9 @@ PyObject* HMDCalibrationDialog::loadMethod(std::string module_name, std::string 
 
   // Load the module object
   Console(4) << __LINE__ << std::endl;
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
-  //CRASH HERE: PROBABLY DUE TO PyFinalize() being called already
+  PyErr_Print();
+  
+  Console(4) << module_name << std::endl;
   pModule = PyImport_ImportModule(module_name.c_str());
   Console(4) << __LINE__ << std::endl;
   PyErr_Print();
@@ -3433,7 +3423,7 @@ void HMDCalibrationDialog::compute(wxCommandEvent& event){
   Console(4) << __LINE__ << std::endl;
   Py_Initialize();
   Console(4) << __LINE__ << std::endl;
-  //initNumpyArray();
+  initNumpyArray();
   //printString();
   Console(4) << __LINE__ << std::endl;
   PyObject* pCalibrationMethod = loadMethod("numpy","array");

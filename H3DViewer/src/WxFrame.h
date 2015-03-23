@@ -74,7 +74,6 @@ using namespace H3D;
 // ---------------------------------------------------------------------------
 //  Property Sheet Dialog
 // ---------------------------------------------------------------------------
-
 class WxFrame;
 
 class SpeedDialog: public wxDialog {
@@ -292,8 +291,6 @@ class HMDCalibrationDialog: public wxDialog {
   wxButton* computeCalibrationAndSaveButton;
   wxButton* applyCalibration;
   wxCheckListBox* deviceChecklist;
-
-  PythonScript calibrationToolsScript;
 
   int numberOfSamples;
 
