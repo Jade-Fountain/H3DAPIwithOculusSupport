@@ -2094,6 +2094,7 @@ void WxFrame::ShowHMDCalibration(wxCommandEvent & event)
     numberOfDevices++;
   }
   hmdCalibrationDialog->setDeviceNames(deviceNames,numberOfDevices);
+  hmdCalibrationDialog->ovrManager = glwindow->ovrManager;
   if (!(check_dialogs_position_because_of_fullscreen_and_not_quadro &&
       GetScreenRect().Intersects( hmdCalibrationDialog->GetScreenRect() ) ) ) {
     if( hmdCalibrationDialog->IsIconized() )
@@ -3295,27 +3296,35 @@ Matrix4f HMDCalibrationDialog::getDeviceMatrix(){
 }
 
 void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
+  Console(4) << "ovrManager " << ovrManager << std::endl;
+  Console(4) << __LINE__ << std::endl;
   Matrix4f deviceMat = getDeviceMatrix();
-  Matrix4f hmdMat = deviceMat; //ovrManager->getHeadPose();
+  Console(4) << __LINE__ << std::endl;
+  Matrix4f hmdMat = ovrManager->getHeadPose();
   
+  Console(4) << __LINE__ << std::endl;
   samples[HMD].push_back(hmdMat);
+  Console(4) << __LINE__ << std::endl;
   samples[1].push_back(deviceMat);
 
+  Console(4) << __LINE__ << std::endl;
   numberOfSamples = samples.size();
+  Console(4) << __LINE__ << std::endl;
   refreshTopSizer();
 
-  // std::ostringstream ss;
-  // ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
-  // ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
-  // ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
-  // ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
-  // wxMessageBox(ss.str());
-  // std::ostringstream ss2;
-  // ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
-  // ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
-  // ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
-  // ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
-  // wxMessageBox(ss2.str());
+  Console(4) << __LINE__ << std::endl;
+  std::ostringstream ss;
+  ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
+  ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
+  ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
+  ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
+  wxMessageBox(ss.str());
+  std::ostringstream ss2;
+  ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
+  ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
+  ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
+  ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
+  wxMessageBox(ss2.str());
   //TODO: finish auto sampler:
   // for (auto& s : samples){
   //   s.clear();
