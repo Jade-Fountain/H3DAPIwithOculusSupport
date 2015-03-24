@@ -3180,10 +3180,12 @@ HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRMa
             numberOfSamples(0),
             ovrManager(ovr),
             deviceChecklist(NULL),
+			deviceBaseToHMDBase(),
             samples(2)  {
 
 //Create top level formatter box
   topSizer = new wxBoxSizer( wxVERTICAL );
+  deviceBaseToHMDBase.setToIdentity();
   
   refreshTopSizer();
 
@@ -3226,7 +3228,7 @@ void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDe
 
     topSizer->Add(getSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
 
-    clearSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Clear Samples");
+    clearSamplesButton = new wxButton(this, BUTTON_CLEAR, "Clear Samples");
 
     topSizer->Add(clearSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
 
@@ -3261,8 +3263,11 @@ std::vector<float> HMDCalibrationDialog::parseFloats(std::string str){
 }
 
 Quaternion HMDCalibrationDialog::getQuatFromString(std::string s){  
+  Console(4) << "Parsing Quat: " << s << std::endl;
   std::vector<float> q = parseFloats(s);
-  return Quaternion(q[0],q[1],q[2],q[3]);
+  Quaternion quat(q[0],q[1],q[2],q[3]);
+  quat.normalize();
+  return quat;
 }
 
 Vec3f HMDCalibrationDialog::getVecFromString(std::string s){  
@@ -3284,7 +3289,10 @@ Matrix4f HMDCalibrationDialog::getDeviceMatrix(){
     H3DHapticsDevice * device = (H3DHapticsDevice*)((*device_iter)->device->front());
     Quaternion rot = getQuatFromString(((ParsableField*) device->getField("trackerOrientation"))->getValueAsString());
     Vec3f t = getVecFromString(((ParsableField*) device->getField("trackerPosition"))->getValueAsString());
-    Matrix4f T(t,Rotation(rot));
+    Rotation R = Rotation(rot);
+	
+    Matrix4f T(t,R);
+
     return T;
 //    std::ostringstream ss;
 //    ss << t[0] << " " << t[1] << " " << t[2];
@@ -3296,23 +3304,15 @@ Matrix4f HMDCalibrationDialog::getDeviceMatrix(){
 }
 
 void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
-  Console(4) << "ovrManager " << ovrManager << std::endl;
-  Console(4) << __LINE__ << std::endl;
   Matrix4f deviceMat = getDeviceMatrix();
-  Console(4) << __LINE__ << std::endl;
   Matrix4f hmdMat = ovrManager->getHeadPose();
   
-  Console(4) << __LINE__ << std::endl;
   samples[HMD].push_back(hmdMat);
-  Console(4) << __LINE__ << std::endl;
   samples[1].push_back(deviceMat);
 
-  Console(4) << __LINE__ << std::endl;
   numberOfSamples = samples.size();
-  Console(4) << __LINE__ << std::endl;
   refreshTopSizer();
 
-  Console(4) << __LINE__ << std::endl;
   std::ostringstream ss;
   ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
   ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
@@ -3344,7 +3344,8 @@ void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
     samples[i].clear();
   }
   numberOfSamples = samples.size();
-  refreshTopSizer();
+  deviceBaseToHMDBase.setToIdentity();
+  wxMessageBox(wxT("Samples and Calibration Cleared"));
 }
 
 PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
@@ -3435,7 +3436,7 @@ void HMDCalibrationDialog::compute(wxCommandEvent& event){
   std::vector<Matrix4f> XY = getMatrices(pXpY);
 
   Matrix4f deviceToHMD = XY[0];
-  Matrix4f deviceBaseToHMDBase = XY[1];
+  deviceBaseToHMDBase = XY[1];
 
   Console(4) << "deviceToHMD = \n" << deviceToHMD << std::endl;
   Console(4) << "deviceBaseToHMDBase = \n" << deviceBaseToHMDBase << std::endl;
@@ -3449,8 +3450,8 @@ void HMDCalibrationDialog::compute(wxCommandEvent& event){
 }
 
 void HMDCalibrationDialog::apply(wxCommandEvent& event){
-  wxMessageBox(wxT("hello from  apply"));
-  refreshTopSizer();
+  ovrManager->setCalibration(deviceBaseToHMDBase);
+  wxMessageBox(wxT("Calibration Successfully Applied!"));
 }
 
 

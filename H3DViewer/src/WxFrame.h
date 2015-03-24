@@ -299,6 +299,8 @@ class HMDCalibrationDialog: public wxDialog {
   wxString *deviceNames;
   int numberOfDevices;
 
+  //Latest Calibration:
+  Matrix4f deviceBaseToHMDBase;
 
   enum
   {//TODO: this seems dodge

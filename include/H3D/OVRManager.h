@@ -55,17 +55,15 @@ namespace H3D {
 					   far_distance(100.0f),
 					   hmd(0)
 					   {
-					   	//Translate in the real world
-					   	worldToCalibration = OVR::Matrix4f::Translation(0,-0.33,-0.310);
-					   	//Scale to to match haptics
-					   	worldToCalibration *= OVR::Matrix4f::Scaling(1);
-
+					   	
 					   	bestPenToHMD = OVR::Matrix4f::Identity();
+					   	deviceBaseToHMDBase = OVR::Matrix4f::Identity();
 						bestRobotToOVR = OVR::Matrix4f::Identity();
 						bestError = 9999999999999999999;	
 
 						angleLearningRate = M_PI;
 						translationLearningRate = 0.1;
+
 					   }
 
 
@@ -96,17 +94,21 @@ namespace H3D {
 		void setProjectionMatrix(ovrEyeType eye);
 
 		Matrix4f getHeadPose(){
-			if(!hmd) return Matrix4f();
-			Beep(500,500);
-			//TODO: change to head pose exactly
+			if(!hmd) throw std::exception("NO HMD DETECTED: MAKE SURE YOU HAVE THE OCULUS RIFT PLUGGED IN AND STEREO MODE SET TO \'OCULUS RIFT\'");
 			OVR::Quatf orientation = OVR::Quatf(headPoses[ovrEye_Left].Orientation);
-			Beep(500,500);
-			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPoses[ovrEye_Left].Position.x,headPoses[ovrEye_Left].Position.y,headPoses[ovrEye_Left].Position.z) * OVR::Matrix4f(orientation); 
-			Beep(500,500);
+			//TODO: check that the eye offset is correct is working
+			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPoses[ovrEye_Left].Position.x,headPoses[ovrEye_Left].Position.y,headPoses[ovrEye_Left].Position.z) * OVR::Matrix4f(orientation) * OVR::Matrix4f::Translation(EyeRenderDesc[ovrEye_Right].HmdToEyeViewOffset); 
 			return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
 					        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
 					        view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3], 
 					        view.M[3][0], view.M[3][1], view.M[3][2], view.M[3][3]);
+		}
+
+		void setCalibration(Matrix4f M){
+			deviceBaseToHMDBase = OVR::Matrix4f(M[0][0], M[0][1], M[0][2], M[0][3], 
+										        M[1][0], M[1][1], M[1][2], M[1][3], 
+										        M[2][0], M[2][1], M[2][2], M[2][3], 
+										        M[3][0], M[3][1], M[3][2], M[3][3]);
 		}
 		
 		void setViewMatrix(ovrEyeType eye);
@@ -148,7 +150,7 @@ namespace H3D {
 		GLuint oculusFramebufferID[2];
 		GLuint oculusDepthbufferID[2];
 
-		OVR::Matrix4f worldToCalibration;
+		OVR::Matrix4f deviceBaseToHMDBase;
 
 		ovrEyeType H3DEyeModeToOVREyeType(H3D::X3DViewpointNode::EyeMode eye_mode);
 
