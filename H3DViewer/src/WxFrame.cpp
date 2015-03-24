@@ -3309,6 +3309,7 @@ void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
   
   samples[HMD].push_back(hmdMat);
   samples[1].push_back(deviceMat);
+  
 
   numberOfSamples = samples.size();
   refreshTopSizer();
