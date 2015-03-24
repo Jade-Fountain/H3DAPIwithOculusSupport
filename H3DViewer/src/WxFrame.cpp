@@ -3309,7 +3309,7 @@ void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
   
   samples[HMD].push_back(hmdMat);
   samples[1].push_back(deviceMat);
-  
+
 
   numberOfSamples = samples.size();
   refreshTopSizer();
@@ -3364,7 +3364,7 @@ PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
         void* place = PyArray_GETPTR3(list, i, j, k);
         //Set  list[i][j][k] = matList[i][j][k]
         PyErr_Print();
-
+        //CRASH WITH MORE OR LESS THAN 3 SAMPLES
         PyArray_SETITEM(list, place, value);
         Py_DECREF(value);
       }
