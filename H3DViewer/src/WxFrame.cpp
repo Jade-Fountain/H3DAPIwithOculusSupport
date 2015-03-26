@@ -3352,8 +3352,8 @@ void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
 PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
   int nSamples = matList.size();
   npy_intp sizes[3] = {nSamples,4,4};
-  PyObject* list = PyArray_ZEROS(nSamples, sizes, NPY_FLOAT, 0);
-  //TODO: why does this only work with >3 samples??
+  int numDims = 3;
+  PyObject* list = PyArray_ZEROS(numDims, sizes, NPY_FLOAT, 0);
   for (int i = 0; i < nSamples; i++){
     for(int j = 0; j < 4; j ++){
       for(int k = 0; k < 4; k ++){
