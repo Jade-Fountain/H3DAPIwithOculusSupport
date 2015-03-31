@@ -255,6 +255,8 @@ class HMDCalibrationDialog: public wxDialog {
   void get_samples(wxCommandEvent& event);
   void clear_samples(wxCommandEvent& event);
   void compute(wxCommandEvent& event);
+  void save_calibration(wxCommandEvent& event);
+  void load_calibration(wxCommandEvent& event);
   void apply(wxCommandEvent& event);
 
   void refreshTopSizer();
@@ -288,7 +290,9 @@ class HMDCalibrationDialog: public wxDialog {
   wxButton* getSamplesButton;
   wxButton* clearSamplesButton;
   wxTextCtrl* sampleCountEntry;
-  wxButton* computeCalibrationAndSaveButton;
+  wxButton* computeCalibrationButton;
+  wxButton* saveButton;
+  wxButton* loadButton;
   wxButton* applyCalibration;
   wxCheckListBox* deviceChecklist;
 
@@ -307,7 +311,9 @@ class HMDCalibrationDialog: public wxDialog {
     BUTTON_GET_SAMPLES = wxID_HIGHEST + 1,
     BUTTON_COMPUTE = wxID_HIGHEST + 2,
     BUTTON_APPLY = wxID_HIGHEST + 3,
-    BUTTON_CLEAR = wxID_HIGHEST + 4
+    BUTTON_CLEAR = wxID_HIGHEST + 4,
+    BUTTON_SAVE = wxID_HIGHEST + 5,
+    BUTTON_LOAD = wxID_HIGHEST + 6
   };
 
 //  vector< wxStaticText * > haptics_rate;

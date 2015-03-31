@@ -3172,6 +3172,8 @@ BEGIN_EVENT_TABLE(HMDCalibrationDialog, wxDialog)
   EVT_BUTTON(BUTTON_CLEAR,HMDCalibrationDialog::clear_samples)
   EVT_BUTTON(BUTTON_COMPUTE,HMDCalibrationDialog::compute)
   EVT_BUTTON(BUTTON_APPLY,HMDCalibrationDialog::apply)
+  EVT_BUTTON(BUTTON_SAVE,HMDCalibrationDialog::save_calibration)
+  EVT_BUTTON(BUTTON_LOAD,HMDCalibrationDialog::load_calibration)
 END_EVENT_TABLE()
 
 HMDCalibrationDialog::HMDCalibrationDialog(wxWindow* win, std::shared_ptr< OVRManager > ovr) :
@@ -3224,6 +3226,9 @@ void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDe
     sampleCountEntry = new wxTextCtrl(this, wxID_ANY, "3", wxDefaultPosition, wxDefaultSize, 0, validator);
 
   //Set buttons
+    loadButton = new wxButton(this, BUTTON_LOAD, "Save");
+    topSizer->Add(loadButton, 0, wxALL|wxALIGN_LEFT, 5);
+
     getSamplesButton = new wxButton(this, BUTTON_GET_SAMPLES, "Get Sample");
 
     topSizer->Add(getSamplesButton, 0, wxALL|wxALIGN_RIGHT, 5);
@@ -3234,11 +3239,15 @@ void HMDCalibrationDialog::setDeviceNames(wxString* deviceNames_, int numberOfDe
 
     topSizer->Add(sampleCountEntry, 0, wxALL|wxALIGN_RIGHT, 5);
     
-    computeCalibrationAndSaveButton = new wxButton(this, BUTTON_COMPUTE, "Compute And Save");
+    computeCalibrationButton = new wxButton(this, BUTTON_COMPUTE, "Compute");
+    
+    saveButton = new wxButton(this, BUTTON_SAVE, "Save");
 
-    topSizer->Add(computeCalibrationAndSaveButton, 0, wxALL|wxALIGN_RIGHT, 5);
+    topSizer->Add(computeCalibrationButton, 0, wxALL|wxALIGN_RIGHT, 5);
 
     applyCalibration = new wxButton(this, BUTTON_APPLY, "Apply");
+
+    topSizer->Add(saveButton, 0, wxALL|wxALIGN_RIGHT, 5);
 
     topSizer->Add(applyCalibration, 0, wxALL|wxALIGN_RIGHT, 5);
     refreshTopSizer();
@@ -3263,7 +3272,6 @@ std::vector<float> HMDCalibrationDialog::parseFloats(std::string str){
 }
 
 Quaternion HMDCalibrationDialog::getQuatFromString(std::string s){  
-  Console(4) << "Parsing Quat: " << s << std::endl;
   std::vector<float> q = parseFloats(s);
   Quaternion quat(q[0],q[1],q[2],q[3]);
   quat.normalize();
@@ -3274,6 +3282,8 @@ Vec3f HMDCalibrationDialog::getVecFromString(std::string s){
 	std::vector<float> q = parseFloats(s);
 	return Vec3f(q[0],q[1],q[2]);
 }
+
+
 
 // bool HMDCalibrationDialog::checkIfNovel(const Matrix4f& m, const std::vector<Matrix4f>&)
 
@@ -3294,9 +3304,6 @@ Matrix4f HMDCalibrationDialog::getDeviceMatrix(){
     Matrix4f T(t,R);
 
     return T;
-//    std::ostringstream ss;
-//    ss << t[0] << " " << t[1] << " " << t[2];
-//   wxMessageBox(ss.str());
   } else{
     wxMessageBox(wxT("NO DEVICE DETECTED OR SCENE NOT LOADED!"));
     return Matrix4f();
@@ -3308,36 +3315,13 @@ void HMDCalibrationDialog::get_samples(wxCommandEvent& event){
   Matrix4f hmdMat = ovrManager->getHeadPose();
   
   samples[HMD].push_back(hmdMat);
+  Console(4) << "deviceMat \n" << deviceMat << std::endl;
+  Console(4) << "hmdMat \n" << hmdMat << std::endl;
   samples[1].push_back(deviceMat);
 
 
   numberOfSamples = samples.size();
   refreshTopSizer();
-
-  std::ostringstream ss;
-  ss << deviceMat[0][0] << " " << deviceMat[0][1] << " " << deviceMat[0][2] << " " << deviceMat[0][3] << std::endl;
-  ss << deviceMat[1][0] << " " << deviceMat[1][1] << " " << deviceMat[1][2] << " " << deviceMat[1][3] << std::endl;
-  ss << deviceMat[2][0] << " " << deviceMat[2][1] << " " << deviceMat[2][2] << " " << deviceMat[2][3] << std::endl;
-  ss << deviceMat[3][0] << " " << deviceMat[3][1] << " " << deviceMat[3][2] << " " << deviceMat[3][3] << std::endl;
-  wxMessageBox(ss.str());
-  std::ostringstream ss2;
-  ss2 << hmdMat[0][0] << " " << hmdMat[0][1] << " " << hmdMat[0][2] << " " << hmdMat[0][3] << std::endl;
-  ss2 << hmdMat[1][0] << " " << hmdMat[1][1] << " " << hmdMat[1][2] << " " << hmdMat[1][3] << std::endl;
-  ss2 << hmdMat[2][0] << " " << hmdMat[2][1] << " " << hmdMat[2][2] << " " << hmdMat[2][3] << std::endl;
-  ss2 << hmdMat[3][0] << " " << hmdMat[3][1] << " " << hmdMat[3][2] << " " << hmdMat[3][3] << std::endl;
-  wxMessageBox(ss2.str());
-  //TODO: finish auto sampler:
-  // for (auto& s : samples){
-  //   s.clear();
-  // }
-  // while (samples[HMD].size() < numberOfSamples){
-  //   Matrix4f deviceMat = getDeviceMatrix();
-  //   // Matrix4f hmdMat = getHMDMatrix();
-  //   if(checkIfNovel(deviceMat)){
-  //     // samples[HMD].push_back(hmdMat);
-  //     samples[1].push_back(deviceMat);
-  //   }
-  // }
 }
 
 void HMDCalibrationDialog::clear_samples(wxCommandEvent& event){
@@ -3363,8 +3347,6 @@ PyObject* HMDCalibrationDialog::createSampleList(std::vector<Matrix4f> matList){
         PyErr_Print();
         void* place = PyArray_GETPTR3(list, i, j, k);
         //Set  list[i][j][k] = matList[i][j][k]
-        PyErr_Print();
-        //CRASH WITH MORE OR LESS THAN 3 SAMPLES
         PyArray_SETITEM(list, place, value);
         Py_DECREF(value);
       }
@@ -3415,39 +3397,121 @@ int HMDCalibrationDialog::initNumpyArray(){
 
 void HMDCalibrationDialog::compute(wxCommandEvent& event){
   Py_Initialize();
+  Console(4) << __LINE__ << std::endl;
   initNumpyArray();
-  //printString();
+  Console(4) << __LINE__ << std::endl;
+
   PyObject* pCalibrationMethod = loadMethod("calibrationtools","solveHomogeneousDualSylvester");
+  Console(4) << __LINE__ << std::endl;
   PyErr_Print();
+  Console(4) << __LINE__ << std::endl;
 
   PyObject* pSamplesA = createSampleList(samples[0]);
+  Console(4) << __LINE__ << std::endl;
   PyObject* pSamplesB = createSampleList(samples[1]);
+  Console(4) << __LINE__ << std::endl;
 
     
   //PyEval_CallObject(pPrint, pSamplesA);
+  Console(4) << __LINE__ << std::endl;
   //PyEval_CallObject(pPrint, pSamplesB);
+  Console(4) << __LINE__ << std::endl;
   PyObject *args = PyTuple_New(2);
+  Console(4) << __LINE__ << std::endl;
   PyTuple_SetItem(args,0,pSamplesA);
+  Console(4) << __LINE__ << std::endl;
   PyTuple_SetItem(args,1,pSamplesB);  
+  Console(4) << __LINE__ << std::endl;
 
   //Call main calibration method
   PyObject* pXpY = PyEval_CallObject(pCalibrationMethod,args);
+  Console(4) << __LINE__ << std::endl;
 
   //Convert result to cpp objects
   std::vector<Matrix4f> XY = getMatrices(pXpY);
+  Console(4) << __LINE__ << std::endl;
 
   Matrix4f deviceToHMD = XY[0];
+  Console(4) << __LINE__ << std::endl;
   deviceBaseToHMDBase = XY[1];
+  Console(4) << __LINE__ << std::endl;
 
   Console(4) << "deviceToHMD = \n" << deviceToHMD << std::endl;
+  Console(4) << __LINE__ << std::endl;
   Console(4) << "deviceBaseToHMDBase = \n" << deviceBaseToHMDBase << std::endl;
+  Console(4) << __LINE__ << std::endl;
 
   Py_DECREF(pSamplesA);
+  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pSamplesB);
+  Console(4) << __LINE__ << std::endl;
   Py_DECREF(args);
+  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pXpY);
+  Console(4) << __LINE__ << std::endl;
   Py_DECREF(pCalibrationMethod);
+  Console(4) << __LINE__ << std::endl;
   Py_Finalize();
+  Console(4) << __LINE__ << std::endl;
+}
+
+void HMDCalibrationDialog::save_calibration(wxCommandEvent& event){
+  std::auto_ptr< wxFileDialog > file_dialog ( new wxFileDialog ( this,
+                                                              wxT("File to save as.."),
+                                                              wxT(""),
+                                                              wxT(""),
+                                                              wxT("*.cal"),
+                                                              wxFD_SAVE,
+                                                              wxDefaultPosition) );
+    
+  if (file_dialog->ShowModal() == wxID_OK) {
+    std::string filename(file_dialog->GetPath().mb_str());
+    std::fstream file;
+    file.open(filename.c_str(),std::fstream::out);
+    if (file.is_open()){
+      for (int i = 0; i < 4; i++){
+      for (int j = 0; j < 4; j++){
+          file << deviceBaseToHMDBase[i][j] << " ";
+        }
+        file << std::endl;
+      }
+      Console(4) << "File saved: "<< filename << std::endl;    
+    } else {
+      Console(4) << "File not open: "<< filename << std::endl;    
+    }
+    file.close();
+  }
+}
+
+void HMDCalibrationDialog::load_calibration(wxCommandEvent& event){
+  std::auto_ptr< wxFileDialog > file_dialog ( new wxFileDialog ( this,
+                                                              wxT("File to load.."),
+                                                              wxT(""),
+                                                              wxT(""),
+                                                              wxT("*.cal"),
+															                                wxFD_OPEN,
+                                                              wxDefaultPosition) );
+    
+  if (file_dialog->ShowModal() == wxID_OK) {
+    std::string filename(file_dialog->GetPath().mb_str());
+  	std::fstream file;
+    file.open(filename.c_str());
+  	if (file.is_open()){
+      for (int i = 0; i < 4; i++){
+		  std::string row;
+		  std::getline(file,row);
+		  std::vector<float> row_values = parseFloats(row);
+  		  for(int j = 0; j < 4; j++){
+  		    deviceBaseToHMDBase[i][j] = row_values[j];
+  		  }
+  	  }
+      Console(4) << "Calibration loaded: "<< filename << std::endl; 
+      Console(4) << "deviceBaseToHMDBase = \n" << deviceBaseToHMDBase << std::endl;
+  	} else {
+      wxMessageBox(wxT("File not found!"));
+    }
+    file.close();
+  }
 }
 
 void HMDCalibrationDialog::apply(wxCommandEvent& event){

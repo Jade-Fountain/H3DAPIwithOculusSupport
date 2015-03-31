@@ -79,7 +79,7 @@ namespace H3D {
 
 		bool checkHealthWarningState();
 
-		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_ = true);
+		void configureRenderSettings(HWND window, HDC hdc, bool separateEyeTextures_ = false);
 
 		void genBufferIDs(int number_of_buffers);
 
@@ -97,7 +97,7 @@ namespace H3D {
 			if(!hmd) throw std::exception("NO HMD DETECTED: MAKE SURE YOU HAVE THE OCULUS RIFT PLUGGED IN AND STEREO MODE SET TO \'OCULUS RIFT\'");
 			OVR::Quatf orientation = OVR::Quatf(headPoses[ovrEye_Left].Orientation);
 			//TODO: check that the eye offset is correct is working
-			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPoses[ovrEye_Left].Position.x,headPoses[ovrEye_Left].Position.y,headPoses[ovrEye_Left].Position.z) * OVR::Matrix4f(orientation) * OVR::Matrix4f::Translation(EyeRenderDesc[ovrEye_Right].HmdToEyeViewOffset); 
+			OVR::Matrix4f view = OVR::Matrix4f::Translation(headPoses[ovrEye_Left].Position.x,headPoses[ovrEye_Left].Position.y,headPoses[ovrEye_Left].Position.z) * OVR::Matrix4f(orientation); 
 			return Matrix4f(view.M[0][0], view.M[0][1], view.M[0][2], view.M[0][3], 
 					        view.M[1][0], view.M[1][1], view.M[1][2], view.M[1][3], 
 					        view.M[2][0], view.M[2][1], view.M[2][2], view.M[2][3], 

@@ -220,7 +220,7 @@ namespace H3D {
 	void OVRManager::setViewMatrix(ovrEyeType eye){
 		headPoses[eye] = ovrHmd_GetHmdPosePerEye(hmd, eye);
 		OVR::Quatf orientation = OVR::Quatf(headPoses[eye].Orientation);
-		OVR::Matrix4f worldToCam = OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
+		OVR::Matrix4f worldToCam = OVR::Matrix4f::Translation(EyeRenderDesc[eye].HmdToEyeViewOffset) * OVR::Matrix4f(orientation.Inverted()) * OVR::Matrix4f::Translation(-headPoses[eye].Position.x,-headPoses[eye].Position.y,-headPoses[eye].Position.z); 
 		worldToCam = worldToCam * deviceBaseToHMDBase;
 		glMultMatrixf(getColumnMajorRepresentation(worldToCam));
 	}
